@@ -1,0 +1,6 @@
+# JetBrains IDE
+.idea/
+
+# exclude (big) data files, but keep example
+/data/*
+!/data/export.lite.csv
