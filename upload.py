@@ -22,12 +22,15 @@ IMAGE_EXTENSION = 'jpg' #
 # replacing the original by a real jpg version, we are doing a backup as PSD.
 BACKUP_EXTENSION = 'psd'
 
+# New limit constant (date string)
+OBJECT_MODIFIED_DATE_LIMIT = '2026-01-01'
+
 # Added imports and implementation
 import os
 import csv
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 import logging
 import boto3
@@ -46,6 +49,15 @@ def _build_s3_key(public_id: str) -> str:
     # ensure no leading slash
     rel = rel.lstrip('/')
     return f"{rel}.{IMAGE_EXTENSION}"
+
+
+def _object_relative_path(public_id: str) -> str:
+    """Return the object relative path (no extension) for a given publicId."""
+    if public_id.startswith(SKIPPED_PREFIX):
+        rel = public_id[len(SKIPPED_PREFIX):]
+    else:
+        rel = public_id
+    return rel.lstrip('/')
 
 
 def _head_s3_object(s3_client, bucket: str, key: str) -> Optional[dict]:
@@ -137,6 +149,16 @@ def main():
 
     logger.info(f"START upload of {total_files} files...")
 
+    # Prepare timezone-aware limit datetime
+    try:
+        limit_dt = datetime.fromisoformat(OBJECT_MODIFIED_DATE_LIMIT)
+        # if date-only, ensure it's midnight UTC
+        if limit_dt.tzinfo is None:
+            limit_dt = limit_dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        # fallback to explicit construction
+        limit_dt = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
     # Iterate CSV rows and log results (detailed messages go to file only).
     # Show a console progress bar (stdout) that counts processed files vs total_files.
     with tqdm(total=total_files, unit='file', desc='Uploaded', file=sys.stdout) as progress:
@@ -170,6 +192,35 @@ def main():
             # Print in the requested format (without content type and checksum):
             # Exist: {object_key} ; size={size} ; {last modified date} ; etag={etag}
             logger.info(f"Exist: {s3_uri} ; size={size_str} ; {last_modified_str} ; etag={etag}")
+
+            # If LastModified exists, compare with OBJECT_MODIFIED_DATE_LIMIT and copy if older.
+            try:
+                if last_modified is not None:
+                    # Ensure last_modified is timezone-aware in UTC for comparison
+                    if last_modified.tzinfo is None:
+                        lm_dt = last_modified.replace(tzinfo=timezone.utc)
+                    else:
+                        lm_dt = last_modified.astimezone(timezone.utc)
+                else:
+                    # If no LastModified, treat as not eligible for copy
+                    lm_dt = None
+
+                if lm_dt is not None and lm_dt < limit_dt:
+                    logger.info(f"Object {s3_uri} was modified before {OBJECT_MODIFIED_DATE_LIMIT}, it will be copied to a new object key with the backup extension.")
+                    rel_path = _object_relative_path(public_id)
+                    backup_key = f"{rel_path}.{BACKUP_EXTENSION}"
+                    backup_s3_uri = f"s3://{bucket}/{backup_key}"
+                    try:
+                        copy_source = {'Bucket': bucket, 'Key': key}
+                        s3.copy_object(CopySource=copy_source, Bucket=bucket, Key=backup_key)
+                        logger.info(f"Object {s3_uri} was successfully copied to {backup_s3_uri}!")
+                    except ClientError as exc:
+                        logger.error(f"Failed to copy {s3_uri} to {backup_s3_uri}: {exc}")
+                else:
+                    logger.info(f"Object {s3_uri} was modified after {OBJECT_MODIFIED_DATE_LIMIT}, it will NOT be copied.")
+            except Exception as exc:
+                logger.error(f"Error processing copy decision for {s3_uri}: {exc}")
+
             progress.update(1)
 
     logger.info(f"END upload of {total_files} files!")
