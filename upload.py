@@ -75,20 +75,10 @@ def _human_readable_size(num: Optional[int]) -> str:
 
 def _choose_timestamp() -> str:
     """
-    Choose a timestamp string to use for logs.
+    Return the current timestamp string using TIMESTAMP_FORMAT.
 
-    Prefer the most recent run folder name under data/runs (so upload logs
-    can share the same timestamp as the corresponding download run). Fallback
-    to current time if none found.
+    The upload log will always be placed under data/logs/<timestamp>/upload.log.
     """
-    runs_dir = Path('data') / 'runs'
-    if runs_dir.exists() and runs_dir.is_dir():
-        # find directories whose name matches TIMESTAMP_FORMAT pattern roughly (digits and hyphen)
-        candidates = [p for p in runs_dir.iterdir() if p.is_dir()]
-        if candidates:
-            # pick the latest by name (timestamp format ordering makes this reasonable)
-            latest = sorted(candidates, key=lambda p: p.name, reverse=True)[0]
-            return latest.name
     return datetime.now().strftime(TIMESTAMP_FORMAT)
 
 

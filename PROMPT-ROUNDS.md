@@ -222,3 +222,30 @@ Solution (step-by-step)
 Changes grouped by file:
 
 - `upload.py`: Create a timestamped log folder (reusing latest data/runs timestamp if available), configure logger with a console filter for START/END messages, use logger for all messages, and output Exist lines without content-type/checksum and with human-readable size.
+
+## Round 5.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `upload.py` to change the location of the log file: Here are detailed implementation instructions:
+
+- create a timestamp string using the format defined in `TIMESTAMP_FORMAT` and create a subfolder in `data/logs` with this timestamp string as name, to save the log file.
+- Keep the filename as `upload.log`
+- remove the logic to reuse the latest run folder name under `data/runs` as it should not be needed anymore.
+
+### Response
+
+Solution (step-by-step)
+1. Replace the existing _choose_timestamp implementation (which searched data/runs) with a simpler function that returns the current timestamp using TIMESTAMP_FORMAT.
+2. Keep main() unchanged (it already calls _choose_timestamp); the log folder will now always use the current timestamp under data/logs.
+3. This meets the PROMPT.md requirements: create a timestamp string from TIMESTAMP_FORMAT, create data/logs/<timestamp>/upload.log, and remove reuse of latest run folder logic.</timestamp>
+
+- `upload.py`: Change _choose_timestamp to always use now() instead of inspecting data/runs.
