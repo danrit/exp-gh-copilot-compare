@@ -27,7 +27,9 @@ import os
 import csv
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 
+import logging
 import boto3
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
@@ -57,51 +59,123 @@ def _head_s3_object(s3_client, bucket: str, key: str) -> Optional[dict]:
         raise
 
 
+def _human_readable_size(num: Optional[int]) -> str:
+    """Format bytes as human readable string (e.g. 1.2 MB)."""
+    if num is None or num == '-' or not isinstance(num, (int, float)):
+        return str(num)
+    num = float(num)
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0 or unit == 'TB':
+            if unit == 'B':
+                return f"{int(num)} {unit}"
+            return f"{num:.2f} {unit}"
+        num /= 1024.0
+    return f"{num:.2f} PB"
+
+
+def _choose_timestamp() -> str:
+    """
+    Choose a timestamp string to use for logs.
+
+    Prefer the most recent run folder name under data/runs (so upload logs
+    can share the same timestamp as the corresponding download run). Fallback
+    to current time if none found.
+    """
+    runs_dir = Path('data') / 'runs'
+    if runs_dir.exists() and runs_dir.is_dir():
+        # find directories whose name matches TIMESTAMP_FORMAT pattern roughly (digits and hyphen)
+        candidates = [p for p in runs_dir.iterdir() if p.is_dir()]
+        if candidates:
+            # pick the latest by name (timestamp format ordering makes this reasonable)
+            latest = sorted(candidates, key=lambda p: p.name, reverse=True)[0]
+            return latest.name
+    return datetime.now().strftime(TIMESTAMP_FORMAT)
+
+
 def main():
-    """Iterate CSV rows, build S3 keys and print object attributes or not-found message."""
+    """Iterate CSV rows, build S3 keys and log object attributes or not-found message."""
     load_dotenv()
 
     bucket = os.getenv('AWS_S3_BUCKET_NAME')
     if not bucket:
         raise RuntimeError("AWS_S3_BUCKET_NAME not set in environment (.env)")
 
+    # Determine timestamp for logs and create log folder
+    timestamp = _choose_timestamp()
+    log_dir = Path('data') / 'logs' / timestamp
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file_path = log_dir / 'upload.log'
+
+    # Configure logger: file handler gets all messages, console only shows START/END
+    logger = logging.getLogger('cgm.upload')
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+    # clear existing handlers
+    for h in list(logger.handlers):
+        logger.removeHandler(h)
+
+    file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
+    file_handler.setFormatter(fmt)
+    logger.addHandler(file_handler)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(fmt)
+
+    class _StartEndFilter(logging.Filter):
+        """Allow only START/END messages to go to the console."""
+        def filter(self, record):
+            try:
+                msg = record.getMessage()
+            except Exception:
+                msg = str(record.msg)
+            return msg.startswith('START') or msg.startswith('END')
+
+    stream_handler.addFilter(_StartEndFilter())
+    logger.addHandler(stream_handler)
+
     s3 = boto3.client('s3')
 
-    # Read CSV and iterate
+    # Read CSV into memory to compute total files
     with open(CSV_FILE_PATH, newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            public_id = (row.get('publicId') or '').strip()
-            if not public_id:
-                continue
+        reader = list(csv.DictReader(csvfile))
+    total_files = sum(1 for row in reader if (row.get('publicId') or '').strip())
 
-            key = _build_s3_key(public_id)
-            s3_uri = f"s3://{bucket}/{key}"
+    logger.info(f"START upload of {total_files} files...")
 
-            try:
-                meta = _head_s3_object(s3, bucket, key)
-            except Exception as exc:
-                # Unexpected AWS error: print and continue
-                print(f"Error querying {s3_uri} : {exc}")
-                continue
+    # Iterate CSV rows and log results (detailed messages go to file only)
+    for row in reader:
+        public_id = (row.get('publicId') or '').strip()
+        if not public_id:
+            continue
 
-            if meta is None:
-                # object does not exist
-                print(f"Do NOT exist: {s3_uri} !")
-                continue
+        key = _build_s3_key(public_id)
+        s3_uri = f"s3://{bucket}/{key}"
 
-            # Extract attributes with sensible fallbacks
-            size = meta.get('ContentLength', '-')
-            last_modified = meta.get('LastModified')
-            last_modified_str = last_modified.isoformat() if hasattr(last_modified, 'isoformat') else str(last_modified)
-            etag = meta.get('ETag', '-')
-            content_type = meta.get('ContentType', '-')
-            # try common checksum fields, fall back to ETag
-            checksum = meta.get('ChecksumCRC32') or meta.get('ChecksumSHA256') or meta.get('ChecksumSHA1') or etag or '-'
+        try:
+            meta = _head_s3_object(s3, bucket, key)
+        except Exception as exc:
+            logger.error(f"Error querying {s3_uri} : {exc}")
+            continue
 
-            # Print in the requested format:
-            # Exist: {object_key} ; size={size} ; {last modified date} ; etag={etag} ; {content type} ; {checksum}
-            print(f"Exist: {s3_uri} ; size={size} ; {last_modified_str} ; etag={etag} ; {content_type} ; {checksum}")
+        if meta is None:
+            logger.info(f"Do NOT exist: {s3_uri} !")
+            continue
+
+        # Extract attributes with sensible fallbacks
+        size = meta.get('ContentLength', '-')
+        size_str = _human_readable_size(size)
+        last_modified = meta.get('LastModified')
+        last_modified_str = last_modified.isoformat() if hasattr(last_modified, 'isoformat') else str(last_modified)
+        etag = meta.get('ETag', '-')
+
+        # Print in the requested format (without content type and checksum):
+        # Exist: {object_key} ; size={size} ; {last modified date} ; etag={etag}
+        logger.info(f"Exist: {s3_uri} ; size={size_str} ; {last_modified_str} ; etag={etag}")
+
+    logger.info(f"END upload of {total_files} files!")
 
 
 if __name__ == '__main__':

@@ -181,3 +181,44 @@ Changes grouped by file:
 
 - `upload.py`: Implement CSV iteration, environment loading and S3 head_object checks. Uses boto3 and python-dotenv.
 - `pyproject.toml`: Add boto3 to project dependencies.
+
+## Round 5
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `upload.py` to improve the output:
+
+- Remove `content type` and `checksum` from the output line, as they are actually not useful in the current context.
+- Format the size in a human-readable format (e.g., KB, MB, GB)
+- move logging messages to a logger instead of using print statements. Here are detailed implementation instructions:
+  - name the log file `upload.log` and create a subfolder in `data/logs`, with the same timestamp string as the one used for the downloaded files, to store it.
+  - configure the logger:
+      - set the logging level to `INFO`
+      - set the log format to include the timestamp (format '%Y-%m-%d %H:%M:%S'), log level and message
+      - set the log file path to the one defined above
+  - replace the print statements with appropriate logging calls (e.g., `logging.info()`)
+  - add one "start" logging message (`logging.info()`) at the start of the upload process to log the total number of files to download, with the following format: `START upload of {total_files} files...`
+  - add one "end" logging message (`logging.info()`) at the end of the upload process to log the completion of the download, with the following format: `END upload of {total_files} files!`
+- Output the "start" and "end" logging messages in the console as well, with the same format as the log file, just like in `download.py`. The other logging messages (existence and metadata of each file) should be output only in the log file, not in the console.
+
+### Response
+
+Solution (step-by-step)
+1. Determine a timestamp string to use for the upload log folder. Reuse the latest run folder name under data/runs if present (so upload logs share the same timestamp as a previous download run); otherwise fall back to now().
+2. Create data/logs/<timestamp> and set upload.log path.</timestamp>
+3. Configure a dedicated module logger (INFO level, timestamped formatter). Attach a FileHandler that logs all INFO+ messages, and a StreamHandler filtered to only allow START/END messages to the console.
+4. Read the CSV into memory to compute total_files, log START upload..., then iterate rows, call head_object for each key and log existence/metadata lines to the file-only logger.
+5. Format ContentLength into a human-readable size string and remove content-type and checksum from the output line.
+6. Log END upload... at the end.
+
+Changes grouped by file:
+
+- `upload.py`: Create a timestamped log folder (reusing latest data/runs timestamp if available), configure logger with a console filter for START/END messages, use logger for all messages, and output Exist lines without content-type/checksum and with human-readable size.
