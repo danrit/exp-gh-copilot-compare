@@ -19,6 +19,7 @@ import os
 import csv
 from pathlib import Path
 from datetime import datetime
+import logging
 
 # External libs
 import requests
@@ -33,41 +34,68 @@ def download_images():
     if not cloudinary_base:
         raise RuntimeError("CLOUDINARY_BASE_URL not set in environment (.env)")
 
-    # Create timestamped run directory under data/runs
+    # Create timestamped run directory under data/runs and data/logs
     timestamp = datetime.now().strftime(TIMESTAMP_FORMAT)
     run_dir = Path('data') / 'runs' / timestamp
     run_dir.mkdir(parents=True, exist_ok=True)
 
-    # Open CSV and iterate rows
+    log_dir = Path('data') / 'logs' / timestamp
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file_path = log_dir / 'download.log'
+
+    # Configure logging: INFO level, timestamp format '%Y-%m-%d %H:%M:%S', file + console handlers
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+    # Clear existing handlers to avoid duplicate logs when reloading module
+    logger.handlers = []
+
+    file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    # Read CSV into memory to compute total files
     with open(CSV_FILE_PATH, newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            public_id = (row.get('publicId') or '').strip()
-            if not public_id:
-                # skip rows without publicId
-                continue
+        reader = list(csv.DictReader(csvfile))
+    total_files = sum(1 for row in reader if (row.get('publicId') or '').strip())
 
-            # Build download URL
-            download_url = f"{cloudinary_base}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
+    logging.info(f"START download of {total_files} files...")
 
-            print(f"Downloading {public_id}...")
+    # Iterate and download
+    for row in reader:
+        public_id = (row.get('publicId') or '').strip()
+        if not public_id:
+            # skip rows without publicId
+            continue
 
-            # Build local file path preserving publicId directory structure
-            local_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
-            local_path.parent.mkdir(parents=True, exist_ok=True)
+        # Build download URL
+        download_url = f"{cloudinary_base}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
 
-            try:
-                with requests.get(download_url, stream=True, timeout=30) as resp:
-                    resp.raise_for_status()
-                    # Write content in chunks
-                    with open(local_path, 'wb') as f:
-                        for chunk in resp.iter_content(chunk_size=8192):
-                            if chunk:
-                                f.write(chunk)
-                print(f"Downloaded {public_id} successfully!")
-            except Exception as exc:
-                # Brief error reporting, continue with next file
-                print(f"Failed to download {public_id}: {exc}")
+        logging.info(f"Downloading {public_id}...")
+
+        # Build local file path preserving publicId directory structure
+        local_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            with requests.get(download_url, stream=True, timeout=30) as resp:
+                resp.raise_for_status()
+                # Write content in chunks
+                with open(local_path, 'wb') as f:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+            logging.info(f"Downloaded {public_id} successfully!")
+        except Exception as exc:
+            # Brief error reporting, continue with next file
+            logging.error(f"Failed to download {public_id}: {exc}")
+
+    logging.info(f"END download of {total_files} files!")
 
 if __name__ == '__main__':
     download_images()

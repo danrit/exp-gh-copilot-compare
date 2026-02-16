@@ -51,3 +51,36 @@ Changes grouped by file:
 
 - `download.py`: Add CSV parsing, .env loading, run-directory creation and downloading logic. Uses requests and python-dotenv (dependencies added in pyproject.toml).
 - `pyproject.toml`: Add required dependencies: requests and python-dotenv.
+
+## Round 2
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Update `download.py` to move logging messages to a logger instead of using print statements. Here are detailed implementation instructions:
+- name the log file `download.log` and create a subfolder in `data/logs`, with the same timestamp string as the one used for the downloaded files, to store it.
+- import the `logging` module and configure it:
+    - set the logging level to `INFO`
+    - set the log format to include the timestamp (format '%Y-%m-%d %H:%M:%S'), log level and message
+    - set the log file path to the one defined above
+- replace the print statements for logging the download progress and success messages with appropriate logging calls (e.g., `logging.info()`)
+- add one "start" logging message (`logging.info()`) at the start of the download process to log the total number of files to download, with the following format: `START download of {total_files} files...`
+- add one "end" logging message (`logging.info()`) at the end of the download process to log the completion of the download, with the following format: `END download of {total_files} files!`
+- Output the "start" and "end" logging messages in the console as well, with the same format as the log file.
+
+### Response
+
+Solution (step-by-step)
+1. Create a timestamp string early and make both run and log subfolders under data/runs/<timestamp> and data/logs/<timestamp>.</timestamp></timestamp>
+2. Configure the root logger with level INFO and a formatter that includes timestamp (format '%Y-%m-%d %H:%M:%S'), log level and message. Attach both a FileHandler (download.log in the run-specific logs folder) and a StreamHandler so START/END appear on console.
+3. Read the CSV into memory to count how many rows have a non-empty publicId and log the START message.
+4. Iterate rows, replacing print() calls with logging.info()/logging.error(), save files in the run folder preserving publicId path structure.
+5. Log the END message when finished.
+
+- `download.py`: Replace prints with logging and add log file configuration and START/END messages.
