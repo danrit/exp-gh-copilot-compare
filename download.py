@@ -43,13 +43,17 @@ def download_images():
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file_path = log_dir / 'download.log'
 
-    # Configure logging: INFO level, timestamp format '%Y-%m-%d %H:%M:%S', file + console handlers
-    logger = logging.getLogger()
+    # Configure logging:
+    # - file_handler: logs all INFO+ messages to the file (detailed download messages go here)
+    # - stream_handler: only allows START/END messages to be printed to console via a filter
+    logger = logging.getLogger('cgm.download')
     logger.setLevel(logging.INFO)
+    logger.propagate = False
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
-    # Clear existing handlers to avoid duplicate logs when reloading module
-    logger.handlers = []
+    # remove any existing handlers on this logger to avoid duplicates
+    for h in list(logger.handlers):
+        logger.removeHandler(h)
 
     file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
     file_handler.setFormatter(formatter)
@@ -57,6 +61,17 @@ def download_images():
 
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
+
+    class _StartEndFilter(logging.Filter):
+        """Allow only START/END messages to go to the console."""
+        def filter(self, record):
+            try:
+                msg = record.getMessage()
+            except Exception:
+                msg = str(record.msg)
+            return msg.startswith('START') or msg.startswith('END')
+
+    stream_handler.addFilter(_StartEndFilter())
     logger.addHandler(stream_handler)
 
     # Read CSV into memory to compute total files
@@ -64,7 +79,7 @@ def download_images():
         reader = list(csv.DictReader(csvfile))
     total_files = sum(1 for row in reader if (row.get('publicId') or '').strip())
 
-    logging.info(f"START download of {total_files} files...")
+    logger.info(f"START download of {total_files} files...")
 
     # Iterate and download
     for row in reader:
@@ -76,7 +91,7 @@ def download_images():
         # Build download URL
         download_url = f"{cloudinary_base}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
 
-        logging.info(f"Downloading {public_id}...")
+        logger.info(f"Downloading {public_id}...")
 
         # Build local file path preserving publicId directory structure
         local_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
@@ -90,12 +105,12 @@ def download_images():
                     for chunk in resp.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
-            logging.info(f"Downloaded {public_id} successfully!")
+            logger.info(f"Downloaded {public_id} successfully!")
         except Exception as exc:
             # Brief error reporting, continue with next file
-            logging.error(f"Failed to download {public_id}: {exc}")
+            logger.error(f"Failed to download {public_id}: {exc}")
 
-    logging.info(f"END download of {total_files} files!")
+    logger.info(f"END download of {total_files} files!")
 
 if __name__ == '__main__':
     download_images()

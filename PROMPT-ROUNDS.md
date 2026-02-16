@@ -84,3 +84,27 @@ Solution (step-by-step)
 5. Log the END message when finished.
 
 - `download.py`: Replace prints with logging and add log file configuration and START/END messages.
+
+## Round 2.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Update `download.py` to have logging messages (`Downloading [...]` and `Downloaded [...]`) output ONLY in the log file, not in the console. Keep the "start" and "end" logging messages output in both (console and log file). That way, the console will show less, while the log file will contain all the detailed messages about each file being downloaded.
+
+## Response
+
+Solution (step-by-step)
+
+1. Create a dedicated logger for this module so we don't affect the root logger.
+2. Add a FileHandler that logs all INFO+ messages to the run-specific log file.
+3. Add a StreamHandler for console output but attach a filter that only allows START/END messages through.
+4. Replace calls to the module-level logging.* functions with the module logger (logger.info / logger.error) so handlers and the filter behave as intended.
+
+- `download.py`: Adjust logging setup to send detailed per-file messages only to the file handler and allow START/END messages to appear on both console and file.
