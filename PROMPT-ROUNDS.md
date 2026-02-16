@@ -249,3 +249,31 @@ Solution (step-by-step)
 3. This meets the PROMPT.md requirements: create a timestamp string from TIMESTAMP_FORMAT, create data/logs/<timestamp>/upload.log, and remove reuse of latest run folder logic.</timestamp>
 
 - `upload.py`: Change _choose_timestamp to always use now() instead of inspecting data/runs.
+
+## Round 6
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `upload.py` to add a **progress bar** to the upload process, similar to the one implemented in `download.py`. Here are detailed implementation instructions:
+
+- It should show the number of files uploaded and the total number of files to upload plus a percentage of completion.
+- It should update after each file is uploaded.
+- It should be displayed in the console, not in the log file.
+
+### Response
+
+Solution (step-by-step)
+1. Add tqdm and sys imports to upload.py.
+2. After computing total_files, create a tqdm progress bar writing to stdout (so it appears only on console).
+3. Wrap the per-row loop with the progress bar context and call progress.update(1) once for each processed publicId (success, not-found or error).
+4. Keep all detailed messages going to the file logger; the progress bar is console-only.
+
+- `upload.py`: Add tqdm-based console progress bar that updates after each processed file (only rows with a non-empty publicId contribute to the total and progress).

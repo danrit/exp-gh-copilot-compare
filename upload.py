@@ -33,6 +33,8 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
+import sys
+from tqdm import tqdm
 
 
 def _build_s3_key(public_id: str) -> str:
@@ -135,35 +137,40 @@ def main():
 
     logger.info(f"START upload of {total_files} files...")
 
-    # Iterate CSV rows and log results (detailed messages go to file only)
-    for row in reader:
-        public_id = (row.get('publicId') or '').strip()
-        if not public_id:
-            continue
+    # Iterate CSV rows and log results (detailed messages go to file only).
+    # Show a console progress bar (stdout) that counts processed files vs total_files.
+    with tqdm(total=total_files, unit='file', desc='Uploaded', file=sys.stdout) as progress:
+        for row in reader:
+            public_id = (row.get('publicId') or '').strip()
+            if not public_id:
+                continue
 
-        key = _build_s3_key(public_id)
-        s3_uri = f"s3://{bucket}/{key}"
+            key = _build_s3_key(public_id)
+            s3_uri = f"s3://{bucket}/{key}"
 
-        try:
-            meta = _head_s3_object(s3, bucket, key)
-        except Exception as exc:
-            logger.error(f"Error querying {s3_uri} : {exc}")
-            continue
+            try:
+                meta = _head_s3_object(s3, bucket, key)
+            except Exception as exc:
+                logger.error(f"Error querying {s3_uri} : {exc}")
+                progress.update(1)
+                continue
 
-        if meta is None:
-            logger.info(f"Do NOT exist: {s3_uri} !")
-            continue
+            if meta is None:
+                logger.info(f"Do NOT exist: {s3_uri} !")
+                progress.update(1)
+                continue
 
-        # Extract attributes with sensible fallbacks
-        size = meta.get('ContentLength', '-')
-        size_str = _human_readable_size(size)
-        last_modified = meta.get('LastModified')
-        last_modified_str = last_modified.isoformat() if hasattr(last_modified, 'isoformat') else str(last_modified)
-        etag = meta.get('ETag', '-')
+            # Extract attributes with sensible fallbacks
+            size = meta.get('ContentLength', '-')
+            size_str = _human_readable_size(size)
+            last_modified = meta.get('LastModified')
+            last_modified_str = last_modified.isoformat() if hasattr(last_modified, 'isoformat') else str(last_modified)
+            etag = meta.get('ETag', '-')
 
-        # Print in the requested format (without content type and checksum):
-        # Exist: {object_key} ; size={size} ; {last modified date} ; etag={etag}
-        logger.info(f"Exist: {s3_uri} ; size={size_str} ; {last_modified_str} ; etag={etag}")
+            # Print in the requested format (without content type and checksum):
+            # Exist: {object_key} ; size={size} ; {last modified date} ; etag={etag}
+            logger.info(f"Exist: {s3_uri} ; size={size_str} ; {last_modified_str} ; etag={etag}")
+            progress.update(1)
 
     logger.info(f"END upload of {total_files} files!")
 
