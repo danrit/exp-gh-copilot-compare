@@ -5,6 +5,7 @@ description = "A collection of python scripts to achieve a one-off task of downl
 dependencies = [
     "requests",
     "python-dotenv",
+    "tqdm",
 ]
 
 [build-system]

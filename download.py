@@ -20,7 +20,8 @@ import csv
 from pathlib import Path
 from datetime import datetime
 import logging
-
+import sys
+from tqdm import tqdm
 # External libs
 import requests
 from dotenv import load_dotenv
@@ -81,34 +82,37 @@ def download_images():
 
     logger.info(f"START download of {total_files} files...")
 
-    # Iterate and download
-    for row in reader:
-        public_id = (row.get('publicId') or '').strip()
-        if not public_id:
-            # skip rows without publicId
-            continue
+    # show progress bar in console (stdout) and update after each successful download
+    with tqdm(total=total_files, unit='file', desc='Downloaded', file=sys.stdout) as progress:
+        # Iterate and download
+        for row in reader:
+            public_id = (row.get('publicId') or '').strip()
+            if not public_id:
+                # skip rows without publicId
+                continue
 
-        # Build download URL
-        download_url = f"{cloudinary_base}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
+            # Build download URL
+            download_url = f"{cloudinary_base}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
 
-        logger.info(f"Downloading {public_id}...")
+            logger.info(f"Downloading {public_id}...")
 
-        # Build local file path preserving publicId directory structure
-        local_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
-        local_path.parent.mkdir(parents=True, exist_ok=True)
+            # Build local file path preserving publicId directory structure
+            local_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
+            local_path.parent.mkdir(parents=True, exist_ok=True)
 
-        try:
-            with requests.get(download_url, stream=True, timeout=30) as resp:
-                resp.raise_for_status()
-                # Write content in chunks
-                with open(local_path, 'wb') as f:
-                    for chunk in resp.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-            logger.info(f"Downloaded {public_id} successfully!")
-        except Exception as exc:
-            # Brief error reporting, continue with next file
-            logger.error(f"Failed to download {public_id}: {exc}")
+            try:
+                with requests.get(download_url, stream=True, timeout=30) as resp:
+                    resp.raise_for_status()
+                    # Write content in chunks
+                    with open(local_path, 'wb') as f:
+                        for chunk in resp.iter_content(chunk_size=8192):
+                            if chunk:
+                                f.write(chunk)
+                logger.info(f"Downloaded {public_id} successfully!")
+                progress.update(1)
+            except Exception as exc:
+                # Brief error reporting, continue with next file
+                logger.error(f"Failed to download {public_id}: {exc}")
 
     logger.info(f"END download of {total_files} files!")
 

@@ -108,3 +108,33 @@ Solution (step-by-step)
 4. Replace calls to the module-level logging.* functions with the module logger (logger.info / logger.error) so handlers and the filter behave as intended.
 
 - `download.py`: Adjust logging setup to send detailed per-file messages only to the file handler and allow START/END messages to appear on both console and file.
+
+## Round 3
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Edit `download.py` to add a **progress bar** to the download process. Here are detailed implementation instructions:
+- consider using an existing Python library for implementation.
+- It should show the number of files downloaded and the total number of files to download plus a percentage of completion.
+- It should update after each file is downloaded.
+- It should be displayed in the console, not in the log file.
+
+## Response
+
+Solution (step-by-step)
+1. Add the well-maintained tqdm library to project dependencies.
+2. Import tqdm and sys in download.py.
+3. Create a console progress bar (writing to stdout) with total = number of files to download.
+4. After each successful download, increment the progress bar. Leave START/END log messages unchanged so they still print to console.
+
+Changes grouped by file:
+
+- `download.py`: Add tqdm import and a console progress bar that updates after each successful file download.
+- `pyproject.toml`: Add tqdm dependency.
