@@ -14,6 +14,9 @@ CSV_FILE_PATH = 'data/export.lite.csv'
 
 TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
 
+# New: prefix to strip from publicId when creating local paths
+SKIPPED_PREFIX = 'editorial/'
+
 # Added imports and implementation
 import os
 import csv
@@ -97,7 +100,9 @@ def download_images():
             logger.info(f"Downloading {public_id}...")
 
             # Build local file path preserving publicId directory structure
-            local_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
+            # strip SKIPPED_PREFIX from public_id when saving locally
+            save_id = public_id[len(SKIPPED_PREFIX):] if public_id.startswith(SKIPPED_PREFIX) else public_id
+            local_path = run_dir / f"{save_id}.{IMAGE_EXTENSION}"
             local_path.parent.mkdir(parents=True, exist_ok=True)
 
             try:

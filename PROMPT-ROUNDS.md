@@ -316,3 +316,30 @@ Solution (step-by-step)
 Changes grouped by file
 
 - `upload.py`: Add OBJECT_MODIFIED_DATE_LIMIT, utility to get relative path, timezone-aware limit, and S3 copy logic in the per-row processing.
+
+## Round 8
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `download.py` to remove one subfolder (`editorial`), part of the `publicID` created for each image downloaded (similarly to what is done in `upload.py`). Here are detailed implementation instructions:
+
+- define a new variable `SKIPPED_PREFIX` with the value `editorial/`
+- update `local_path` to remove the `SKIPPED_PREFIX` from the `publicId` value when building the local path to save the downloaded file.
+
+### Response
+
+Solution (step-by-step)
+
+1. Add SKIPPED_PREFIX = 'editorial/' next to the other constants.
+2. When building the local save path for each downloaded image, strip SKIPPED_PREFIX from publicId if present.
+3. Ensure parent directories are created before writing (existing code already does this).
+
+- `download.py`: Update constants and local_path construction to remove the 'editorial/' prefix from saved paths.
