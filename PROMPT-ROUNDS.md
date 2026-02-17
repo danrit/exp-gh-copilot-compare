@@ -374,3 +374,27 @@ Solution (step-by-step)
 4. Log success or failure messages exactly as requested.
 
 - `upload.py`: Add DOWNLOADED_FILES_PATH and upload logic inside the existing copy-if-older block.
+
+## Round 9.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+There is an issue with the current implementation: error message: `Local file {local_file_path} does not exist, cannot upload to {object_key}!` is logged even when the local file actually exists. It seems to be because the `publicId` value used to build the `local_file_path` still contains the `SKIPPED_PREFIX` (`editorial/`) which is not present in the actual filename of the downloaded file (as it was removed in `download.py`). Fix the issue in `upload.py`.
+
+### Response
+
+Solution (step-by-step)
+
+1. Compute the local save-id by stripping SKIPPED_PREFIX from public_id (same logic as download.py).
+2. Use that save-id when building local_file_path so the path matches where download.py wrote files.
+3. Keep the rest of the upload logic unchanged.
+
+- `upload.py`: Fix local_file_path construction to remove the SKIPPED_PREFIX before checking/uploading.

@@ -218,7 +218,9 @@ def main():
                         s3.copy_object(CopySource=copy_source, Bucket=bucket, Key=backup_key)
                         logger.info(f"Object {s3_uri} was successfully copied to {backup_s3_uri}!")
                         # After successful backup copy, upload the local file to the original key.
-                        local_file_path = Path(DOWNLOADED_FILES_PATH) / f"{public_id}.{IMAGE_EXTENSION}"
+                        # strip SKIPPED_PREFIX to match how download.py saved files locally
+                        save_id = public_id[len(SKIPPED_PREFIX):] if public_id.startswith(SKIPPED_PREFIX) else public_id
+                        local_file_path = Path(DOWNLOADED_FILES_PATH) / f"{save_id}.{IMAGE_EXTENSION}"
                         if not local_file_path.exists():
                             logger.error(f"Local file {local_file_path} does not exist, cannot upload to {key}!")
                         else:
