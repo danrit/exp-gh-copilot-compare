@@ -398,3 +398,26 @@ Solution (step-by-step)
 3. Keep the rest of the upload logic unchanged.
 
 - `upload.py`: Fix local_file_path construction to remove the SKIPPED_PREFIX before checking/uploading.
+
+## Round 9.2
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+There is an issue with the current implementation: the uploaded file seems to be saved in S3 with metadata `Content-Type: binary/octet-stream` instead of the expected `Content-Type: image/jpeg`. Fix the issue in `upload.py`.
+
+### Response
+
+Solution (step-by-step)
+1. Determine the correct Content-Type for the local file before uploading (use mimetypes.guess_type and fall back to image/jpeg for .jpg/.jpeg).
+2. Pass that Content-Type to s3.upload_file via ExtraArgs so S3 stores the correct metadata.
+3. Keep existing behavior and logging; only change the upload call.
+
+- `upload.py`: Set Content-Type when uploading local files to S3.

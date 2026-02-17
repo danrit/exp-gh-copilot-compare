@@ -41,6 +41,7 @@ from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 import sys
 from tqdm import tqdm
+import mimetypes
 
 
 def _build_s3_key(public_id: str) -> str:
@@ -225,8 +226,17 @@ def main():
                             logger.error(f"Local file {local_file_path} does not exist, cannot upload to {key}!")
                         else:
                             try:
-                                # upload local file to the original object key
-                                s3.upload_file(str(local_file_path), bucket, key)
+                                # determine a sensible Content-Type and upload with it so S3 doesn't store binary/octet-stream
+                                ctype, _ = mimetypes.guess_type(local_file_path.name)
+                                if not ctype:
+                                    # prefer image/jpeg for .jpg/.jpeg by default
+                                    ext = local_file_path.suffix.lower()
+                                    if ext in ('.jpg', '.jpeg'):
+                                        ctype = 'image/jpeg'
+                                    else:
+                                        ctype = 'binary/octet-stream'
+                                extra_args = {'ContentType': ctype}
+                                s3.upload_file(str(local_file_path), bucket, key, ExtraArgs=extra_args)
                                 logger.info(f"Object {key} was successfully uploaded from {local_file_path}!")
                             except Exception as exc:
                                 logger.error(f"Failed to upload {local_file_path} to s3://{bucket}/{key}: {exc}")
