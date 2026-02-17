@@ -5,19 +5,18 @@ The CSV row field `publicId` is used both to build the download URL and to
 create the relative output path for each downloaded image.
 """
 
+from __future__ import annotations
+
 # settings:
-DEFAULT_TRANSFORMATION_PREFIX = 'image/upload/t_hires2/v1'
+DEFAULT_TRANSFORMATION_PREFIX = "image/upload/t_hires2/v1"
 # EXTENSION_JPEG: this one is a best guess, as cloudinary seems to have remove
 # the actual 'fake' extension the image was uploaded with and replaced it with
 # the actual format of the image: psd. We will assume the original extension
 # was jpg, because it seems to be the most common one in the dataset.
-IMAGE_EXTENSION = 'jpg' #
+IMAGE_EXTENSION = "jpg"
 # CSV_FILE_PATH = 'data/export-2026-02-05T01_28_30.025Z.csv'
-CSV_FILE_PATH = 'data/export.lite.csv'
-
-TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
-
-from __future__ import annotations
+CSV_FILE_PATH = "data/export.lite.csv"
+TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S"
 
 import csv
 import os

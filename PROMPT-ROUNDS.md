@@ -48,3 +48,30 @@ Usage of the updated `download.py` should be as follows: `python download.py` (+
 
 - `download.py`: Implement CSV-driven downloads, .env loading, timestamped run folder creation, URL building, and console progress logging.
 - `pyproject.toml`: Add python-dotenv to load .env so CLOUDINARY_BASE_URL is available at runtime.
+
+## Round 1.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+There is an issue with the current implementation: running `python download.py` output the error message: 
+```
+  File "/Users/gabriel.damour/PycharmProjects/cgm-5625/download.py", line 20
+    from __future__ import annotations
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: from __future__ imports must occur at the beginning of the file
+```
+Fix the issue.
+
+### Response
+
+1. Open download.py and move from __future__ import annotations to the very top (it must come right after the module docstring, before any other code).
+2. Keep settings/constants after the imports to avoid reintroducing the same SyntaxError.
+
+- `download.py`: Fix the SyntaxError by placing the __future__ import at the beginning of the file (after the docstring) and keeping constants below imports.
