@@ -3,6 +3,7 @@ name = "cgm-5625"
 version = "0.0.1"
 description = "A collection of python scripts to achieve a one-off task of downloading and uploading a list of images"
 dependencies = [
+  "python-dotenv>=1.0.0",
 ]
 
 [build-system]
