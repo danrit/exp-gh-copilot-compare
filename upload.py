@@ -22,6 +22,9 @@ IMAGE_EXTENSION = 'jpg' #
 # replacing the original by a real jpg version, we are doing a backup as PSD.
 BACKUP_EXTENSION = 'psd'
 
+# New: path where download.py saved files for the referenced run
+DOWNLOADED_FILES_PATH = 'data/runs/20260217-112309'
+
 # New limit constant (date string)
 OBJECT_MODIFIED_DATE_LIMIT = '2026-01-01'
 
@@ -214,6 +217,17 @@ def main():
                         copy_source = {'Bucket': bucket, 'Key': key}
                         s3.copy_object(CopySource=copy_source, Bucket=bucket, Key=backup_key)
                         logger.info(f"Object {s3_uri} was successfully copied to {backup_s3_uri}!")
+                        # After successful backup copy, upload the local file to the original key.
+                        local_file_path = Path(DOWNLOADED_FILES_PATH) / f"{public_id}.{IMAGE_EXTENSION}"
+                        if not local_file_path.exists():
+                            logger.error(f"Local file {local_file_path} does not exist, cannot upload to {key}!")
+                        else:
+                            try:
+                                # upload local file to the original object key
+                                s3.upload_file(str(local_file_path), bucket, key)
+                                logger.info(f"Object {key} was successfully uploaded from {local_file_path}!")
+                            except Exception as exc:
+                                logger.error(f"Failed to upload {local_file_path} to s3://{bucket}/{key}: {exc}")
                     except ClientError as exc:
                         logger.error(f"Failed to copy {s3_uri} to {backup_s3_uri}: {exc}")
                 else:
