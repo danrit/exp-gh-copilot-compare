@@ -3,7 +3,7 @@ Download the list of jpeg transformed images from cloudinary and save them local
 """
 
 # settings:
-DEFAULT_TRANSFORMATION_PREFIX = 'image/upload/t_default/v1'
+DEFAULT_TRANSFORMATION_PREFIX = 'image/upload/t_hires2/v1'
 # EXTENSION_JPEG: this one is a best guess, as cloudinary seems to have remove
 # the actual 'fake' extension the image was uploaded with and replaced it with
 # the actual format of the image: psd. We will assume the original extension
