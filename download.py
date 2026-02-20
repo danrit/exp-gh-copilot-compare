@@ -28,6 +28,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 
 def _require_env(name: str) -> str:
@@ -122,7 +123,7 @@ def main() -> int:
     total_files = len(public_ids)
     logger.info(f"START download of {total_files} files...")
 
-    for public_id in public_ids:
+    for public_id in tqdm(public_ids, total=total_files, unit="file", desc="Downloading", dynamic_ncols=True):
         logger.info(f"Downloading {public_id}...")
         url = _build_download_url(cloudinary_base_url, public_id)
 
