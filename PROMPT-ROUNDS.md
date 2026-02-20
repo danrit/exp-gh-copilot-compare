@@ -111,3 +111,25 @@ Update `download.py` to move logging messages to a logger instead of using print
 5. Log START download of {total_files} files..., then iterate downloads logging progress/success via logger.info(...), and finally log END download of {total_files} files!.
 
 - `download.py`: Replace print() calls with structured logging, add timestamped log folder+file, and log START/END messages to both file and console.
+
+## Round 2.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Update `download.py` to have logging messages (`Downloading [...]` and `Downloaded [...]`) output ONLY in the log file, not in the console. Keep the "start" and "end" logging messages output in both (console and log file). That way, the console will show less, while the log file will contain all the detailed messages about each file being downloaded.
+
+### Response
+
+1. Update the logger configuration to use two handlers with different levels:
+    - File handler: logs everything (INFO) so it contains detailed per-file messages.
+    - Console handler: logs only high-level messages by filtering to START... and END....
+2. Keep using logger.info(...) in the download loop; the filtering will ensure those messages go only to the file.
+
+- `download.py`: Add a console filter so only START/END messages appear on stdout, while all INFO messages (including per-file) go to download.log.

@@ -51,8 +51,16 @@ def _download_to_path(url: str, output_path: Path) -> None:
         f.write(resp.read())
 
 
+class _StartEndOnlyFilter(logging.Filter):
+    """Allow only START/END messages through (intended for console handler)."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return msg.startswith("START ") or msg.startswith("END ")
+
+
 def _configure_logger(log_file_path: Path) -> logging.Logger:
-    """Configure and return a logger that logs to both file and console."""
+    """Configure and return a logger that logs details to file and start/end to console."""
     log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger("cgm-5625.download")
@@ -72,6 +80,7 @@ def _configure_logger(log_file_path: Path) -> logging.Logger:
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(formatter)
+        console_handler.addFilter(_StartEndOnlyFilter())
 
         logger.addHandler(file_handler)
         logger.addHandler(console_handler)
