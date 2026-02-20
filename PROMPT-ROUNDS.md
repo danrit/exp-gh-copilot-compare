@@ -133,3 +133,24 @@ Update `download.py` to have logging messages (`Downloading [...]` and `Download
 2. Keep using logger.info(...) in the download loop; the filtering will ensure those messages go only to the file.
 
 - `download.py`: Add a console filter so only START/END messages appear on stdout, while all INFO messages (including per-file) go to download.log.
+
+## Round 2.2
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+There is an issue with the current implementation: it is confusing how the timestamp string used for folders is based on UTC time, while the timestamps in the log messages are based on local time. Update the implementation to use the same timezone for both, ideally local time.
+
+### Response
+
+1. Switch the run folder timestamp generation from UTC to local time by using datetime.now().astimezone() (local tz-aware).
+2. Keep the logging timestamp consistent by switching the formatter to use local time explicitly via formatter.converter = time.localtime.
+3. Remove the unused timezone import after changing timestamp generation.
+
+- `download.py`: Use local time consistently for both the folder timestamp and log timestamps.

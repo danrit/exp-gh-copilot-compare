@@ -21,7 +21,8 @@ TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S"
 import csv
 import logging
 import os
-from datetime import datetime, timezone
+import time
+from datetime import datetime
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -72,6 +73,7 @@ def _configure_logger(log_file_path: Path) -> logging.Logger:
             fmt="%(asctime)s %(levelname)s %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
+        formatter.converter = time.localtime  # keep log timestamps in local time
 
         file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
         file_handler.setLevel(logging.INFO)
@@ -94,7 +96,7 @@ def main() -> int:
 
     cloudinary_base_url = _require_env("CLOUDINARY_BASE_URL")
 
-    timestamp = datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT)
+    timestamp = datetime.now().astimezone().strftime(TIMESTAMP_FORMAT)  # local time
 
     run_dir = Path("data") / "runs" / timestamp
     run_dir.mkdir(parents=True, exist_ok=True)
