@@ -19,6 +19,7 @@ CSV_FILE_PATH = "data/export.lite.csv"
 TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S"
 
 import csv
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,6 +51,34 @@ def _download_to_path(url: str, output_path: Path) -> None:
         f.write(resp.read())
 
 
+def _configure_logger(log_file_path: Path) -> logging.Logger:
+    """Configure and return a logger that logs to both file and console."""
+    log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    logger = logging.getLogger("cgm-5625.download")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    if not logger.handlers:
+        formatter = logging.Formatter(
+            fmt="%(asctime)s %(levelname)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+
+        file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(formatter)
+
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
+
+    return logger
+
+
 def main() -> int:
     """Entry point: read CSV, download each image into a timestamped run folder."""
     load_dotenv()
@@ -57,8 +86,12 @@ def main() -> int:
     cloudinary_base_url = _require_env("CLOUDINARY_BASE_URL")
 
     timestamp = datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT)
+
     run_dir = Path("data") / "runs" / timestamp
     run_dir.mkdir(parents=True, exist_ok=True)
+
+    log_file_path = Path("data") / "logs" / timestamp / "download.log"
+    logger = _configure_logger(log_file_path)
 
     csv_path = Path(CSV_FILE_PATH)
     if not csv_path.is_file():
@@ -69,22 +102,28 @@ def main() -> int:
         if not reader.fieldnames or "publicId" not in reader.fieldnames:
             raise RuntimeError("CSV must contain a 'publicId' column")
 
+        public_ids: list[str] = []
         for row in reader:
             public_id = (row.get("publicId") or "").strip()
-            if not public_id:
-                continue
+            if public_id:
+                public_ids.append(public_id)
 
-            print(f"Downloading {public_id}...")
-            url = _build_download_url(cloudinary_base_url, public_id)
+    total_files = len(public_ids)
+    logger.info(f"START download of {total_files} files...")
 
-            output_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
-            try:
-                _download_to_path(url, output_path)
-            except (HTTPError, URLError, TimeoutError) as e:
-                raise RuntimeError(f"Failed to download {public_id} from {url}: {e}") from e
+    for public_id in public_ids:
+        logger.info(f"Downloading {public_id}...")
+        url = _build_download_url(cloudinary_base_url, public_id)
 
-            print(f"Downloaded {public_id} successfully!")
+        output_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
+        try:
+            _download_to_path(url, output_path)
+        except (HTTPError, URLError, TimeoutError) as e:
+            raise RuntimeError(f"Failed to download {public_id} from {url}: {e}") from e
 
+        logger.info(f"Downloaded {public_id} successfully!")
+
+    logger.info(f"END download of {total_files} files!")
     return 0
 
 

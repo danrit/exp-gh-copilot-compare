@@ -75,3 +75,39 @@ Fix the issue.
 2. Keep settings/constants after the imports to avoid reintroducing the same SyntaxError.
 
 - `download.py`: Fix the SyntaxError by placing the __future__ import at the beginning of the file (after the docstring) and keeping constants below imports.
+
+## Round 2
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Update `download.py` to move logging messages to a logger instead of using print statements. Here are detailed implementation instructions:
+- name the log file `download.log` and create a subfolder in `data/logs`, with the same timestamp string as the one used for the downloaded files, to store it.
+- import the `logging` module and configure it:
+    - set the logging level to `INFO`
+    - set the log format to include the timestamp (format '%Y-%m-%d %H:%M:%S'), log level and message
+    - set the log file path to the one defined above
+- replace the print statements for logging the download progress and success messages with appropriate logging calls (e.g., `logging.info()`)
+- add one "start" logging message (`logging.info()`) at the start of the download process to log the total number of files to download, with the following format: `START download of {total_files} files...`
+- add one "end" logging message (`logging.info()`) at the end of the download process to log the completion of the download, with the following format: `END download of {total_files} files!`
+- Output the "start" and "end" logging messages in the console as well, with the same format as the log file.
+
+### Response
+
+1. Compute the run timestamp once (already done) and reuse it for both downloads and logs folders.
+2. Create data/logs/<timestamp>/download.log.
+3. Configure a dedicated logger with:
+    - level INFO
+    - formatter including timestamp '%Y-%m-%d %H:%M:%S', level, and message
+    - a FileHandler writing to download.log
+    - a StreamHandler writing to console (so START/END also appear in console)
+4. Read all CSV rows first to collect publicIds and compute total_files.
+5. Log START download of {total_files} files..., then iterate downloads logging progress/success via logger.info(...), and finally log END download of {total_files} files!.
+
+- `download.py`: Replace print() calls with structured logging, add timestamped log folder+file, and log START/END messages to both file and console.
