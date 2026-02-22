@@ -356,3 +356,28 @@ Edit `upload.py` to change `BACKUP_EXTENSION` variable to its initial value of `
 3. No dependency changes are needed.
 
 - `upload.py`: Restore BACKUP_EXTENSION to psd and reinstate the original comment explaining why it is used.
+
+## Round 8
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `download.py` to remove one subfolder (`editorial`), part of the `publicID` created for each image downloaded (similarly to what is done in `upload.py`). Here are detailed implementation instructions:
+
+- define a new variable `SKIPPED_PREFIX` with the value `editorial/`
+- update `local_path` to remove the `SKIPPED_PREFIX` from the `publicId` value when building the local path to save the downloaded file.
+
+### Response
+
+1. Add SKIPPED_PREFIX = "editorial/" to download.py settings (mirroring upload.py).
+2. When building the output_path, remove SKIPPED_PREFIX from the start of public_id (only if present) so the local folder tree doesn’t include editorial/.
+3. Keep the download URL unchanged (still uses the original publicId).
+
+- `download.py`: Add SKIPPED_PREFIX and strip it from the local output path computation.

@@ -18,6 +18,9 @@ IMAGE_EXTENSION = "jpg"
 CSV_FILE_PATH = "data/export.lite.csv"
 TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S"
 
+# SKIPPED_PREFIX path prefix in publicId file (from cloudinary) not needed locally.
+SKIPPED_PREFIX = "editorial/"
+
 import csv
 import logging
 import os
@@ -127,7 +130,11 @@ def main() -> int:
         logger.info(f"Downloading {public_id}...")
         url = _build_download_url(cloudinary_base_url, public_id)
 
-        output_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
+        relative_public_id = public_id
+        if SKIPPED_PREFIX and relative_public_id.startswith(SKIPPED_PREFIX):
+            relative_public_id = relative_public_id[len(SKIPPED_PREFIX) :]
+
+        output_path = run_dir / f"{relative_public_id}.{IMAGE_EXTENSION}"
         try:
             _download_to_path(url, output_path)
         except (HTTPError, URLError, TimeoutError) as e:
