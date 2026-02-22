@@ -205,7 +205,12 @@ def main() -> int:
                 continue
 
             try:
-                s3.upload_file(str(local_file_path), bucket_name, object_key)
+                s3.upload_file(
+                    str(local_file_path),
+                    bucket_name,
+                    object_key,
+                    ExtraArgs={"ContentType": "image/jpeg"},
+                )
             except ClientError as e:
                 logger.error(f"Failed to upload {local_file_path} to {object_key}: {e}")
             except OSError as e:

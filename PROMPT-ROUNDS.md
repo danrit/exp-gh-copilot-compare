@@ -434,3 +434,25 @@ There is an issue with the current implementation: error message: `Local file {l
 3. Keep the rest of the S3 logic, logging, and tqdm behavior unchanged.
 
 - `upload.py`: Build local_file_path from the publicId with SKIPPED_PREFIX removed (matching download.py output structure), so existing local files are correctly detected.
+
+## Round 9.2
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+There is an issue with the current implementation: the uploaded file seems to be saved in S3 with metadata `Content-Type: binary/octet-stream` instead of the expected `Content-Type: image/jpeg`. Fix the issue in `upload.py`.
+
+### Response
+
+1. Detect why S3 shows Content-Type: binary/octet-stream: boto3’s upload_file won’t infer MIME type unless you pass ExtraArgs={"ContentType": ...}.
+2. When uploading the local JPEG, set ContentType explicitly to image/jpeg.
+3. Keep the existing flow (head/copy/date limit/logging/tqdm) unchanged.
+
+- `upload.py`: Set the S3 ContentType when calling upload_file so uploaded objects get Content-Type: image/jpeg.
