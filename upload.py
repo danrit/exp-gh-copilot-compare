@@ -18,6 +18,7 @@ from typing import Any
 import boto3
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 # settings:
 CSV_FILE_PATH = "data/export.lite.csv"
@@ -137,7 +138,7 @@ def main() -> int:
     total_files = len(public_ids)
     logger.info(f"START upload of {total_files} files...")
 
-    for public_id in public_ids:
+    for public_id in tqdm(public_ids, total=total_files, unit="file", desc="Uploading", dynamic_ncols=True):
         object_relative_path = _object_relative_path_from_public_id(public_id)
         object_key = f"{object_relative_path}.{IMAGE_EXTENSION}"
         object_uri = f"s3://{bucket_name}/{object_key}"

@@ -263,3 +263,29 @@ Edit `upload.py` to improve the output:
 2. Keep dependencies as-is (already includes python-dotenv and boto3; no new libraries needed).
 
 - `upload.py`: Implement the logging behavior, human-readable size formatting, and simplified “Exist” output exactly as requested in PROMPT.md.
+
+## Round 6
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `upload.py` to add a **progress bar** to the upload process, similar to the one implemented in `download.py`. Here are detailed implementation instructions:
+
+- It should show the number of files uploaded and the total number of files to upload plus a percentage of completion.
+- It should update after each file is uploaded.
+- It should be displayed in the console, not in the log file.
+
+### Response
+
+1. Add tqdm to upload.py imports.
+2. Wrap the per-object loop with tqdm(...) so the console shows processed/total and a percentage.
+3. Keep per-object logging via logger.info(...) (it will continue to go only to the log file because the console handler is filtered to START/END).
+
+- `upload.py`: Add a tqdm progress bar for the upload/check loop; it renders in the console and is not written to the log file.
