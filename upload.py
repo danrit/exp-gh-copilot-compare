@@ -198,7 +198,8 @@ def main() -> int:
             else:
                 logger.info(f"Object {object_key} was successfully copied to {backup_object_key}!")
 
-            local_file_path = Path(DOWNLOADED_FILES_PATH) / f"{public_id}.{IMAGE_EXTENSION}"
+            local_relative_path = _object_relative_path_from_public_id(public_id)
+            local_file_path = Path(DOWNLOADED_FILES_PATH) / f"{local_relative_path}.{IMAGE_EXTENSION}"
             if not local_file_path.is_file():
                 logger.info(f"Local file {local_file_path} does not exist, cannot upload to {object_key}!")
                 continue
