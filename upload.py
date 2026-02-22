@@ -29,6 +29,12 @@ SKIPPED_PREFIX = "editorial/"
 
 # EXTENSION_JPEG: best guess based on dataset.
 IMAGE_EXTENSION = "jpg"
+
+# BACKUP_EXTENSION: extension used for the copied object.
+BACKUP_EXTENSION = "bak"
+
+# OBJECT_MODIFIED_DATE_LIMIT: objects modified before this date will be copied.
+OBJECT_MODIFIED_DATE_LIMIT = "2026-01-01"
 # end settings
 
 
@@ -109,12 +115,20 @@ def _configure_logger(log_file_path: Path) -> logging.Logger:
     return logger
 
 
+def _parse_object_modified_date_limit(value: str) -> datetime:
+    """Parse YYYY-MM-DD into a timezone-aware local datetime (start-of-day)."""
+    local_tz = datetime.now().astimezone().tzinfo
+    return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=local_tz)
+
+
 def main() -> int:
     """Run the S3 existence/metadata check."""
     load_dotenv()
 
     bucket_name = _require_env("AWS_S3_BUCKET_NAME").strip()
     s3 = boto3.client("s3")
+
+    modified_date_limit = _parse_object_modified_date_limit(OBJECT_MODIFIED_DATE_LIMIT)
 
     timestamp = datetime.now().astimezone().strftime(TIMESTAMP_FORMAT)
     log_file_path = Path("data") / "logs" / timestamp / "upload.log"
@@ -154,10 +168,35 @@ def main() -> int:
             raise
 
         size_human = _format_size(head.get("ContentLength"))
-        last_modified = _format_last_modified(head.get("LastModified"))
+        last_modified_raw = head.get("LastModified")
+        last_modified = last_modified_raw if isinstance(last_modified_raw, datetime) else None
         etag = head.get("ETag")
 
-        logger.info(f"Exist: {object_uri} ; size={size_human} ; {last_modified} ; etag={etag}")
+        logger.info(
+            f"Exist: {object_uri} ; size={size_human} ; {_format_last_modified(last_modified_raw)} ; etag={etag}"
+        )
+
+        if isinstance(last_modified, datetime) and last_modified < modified_date_limit:
+            logger.info(
+                f"Object {object_key} was modified before {OBJECT_MODIFIED_DATE_LIMIT}, "
+                f"it will be copied to a new object key with the backup extension."
+            )
+
+            backup_object_key = f"{object_relative_path}.{BACKUP_EXTENSION}"
+            try:
+                s3.copy_object(
+                    Bucket=bucket_name,
+                    Key=backup_object_key,
+                    CopySource={"Bucket": bucket_name, "Key": object_key},
+                )
+            except ClientError as e:
+                logger.error(f"Failed to copy object {object_key} to {backup_object_key}: {e}")
+            else:
+                logger.info(f"Object {object_key} was successfully copied to {backup_object_key}!")
+        else:
+            logger.info(
+                f"Object {object_key} was modified after {OBJECT_MODIFIED_DATE_LIMIT}, it will NOT be copied."
+            )
 
     logger.info(f"END upload of {total_files} files!")
     return 0

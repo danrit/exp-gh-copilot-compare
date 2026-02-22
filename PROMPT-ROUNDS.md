@@ -289,3 +289,39 @@ Edit `upload.py` to add a **progress bar** to the upload process, similar to the
 3. Keep per-object logging via logger.info(...) (it will continue to go only to the log file because the console handler is filtered to START/END).
 
 - `upload.py`: Add a tqdm progress bar for the upload/check loop; it renders in the console and is not written to the log file.
+
+## Round 7
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Now that `upload.py` can iterate over the CSV file and run successfully this simple object check using `boto3` library to interact with AWS S3, the next step is to create a copy of the existing object to a new object key with a different extension. Here are detailed implementation instructions:
+
+- define a new variable `OBJECT_MODIFIED_DATE_LIMIT` in `upload.py` with a date value '2026-01-01'
+- For each row in the CSV file, after successfully checking the existence of the object and retrieving its attributes and IF the `LastModified` attribute is earlier than the `OBJECT_MODIFIED_DATE_LIMIT`:
+  - log a message with the following format: `Object {object_key} was modified before {OBJECT_MODIFIED_DATE_LIMIT}, it will be copied to a new object key with the backup extension.`
+  - create a copy of the object to a new S3 object with the key defined using the following pattern: `s3://{AWS_S3_BUCKET_NAME}/{OBJECT_RELATIVE_PATH}.{BACKUP_EXTENSION}`
+    - `AWS_S3_BUCKET_NAME` is an environment variable defined in `.env`
+    - `OBJECT_RELATIVE_PATH` is a variable to define by removing the prefix defined in `SKIPPED_PREFIX` from the `publicId` value
+    - `BACKUP_EXTENSION` is defined in `upload.py`
+  - log a message when the copy is successful with the following format: `Object {object_key} was successfully copied to {backup_object_key}!`
+  - if the copy operation fails, log a relevant error message.
+- If the `LastModified` attribute is later than or equal to the `OBJECT_MODIFIED_DATE_LIMIT`, log a message with the following format: `Object {object_key} was modified after {OBJECT_MODIFIED_DATE_LIMIT}, it will NOT be copied.`
+
+### Response
+
+1. Add the missing settings in upload.py: BACKUP_EXTENSION and OBJECT_MODIFIED_DATE_LIMIT = "2026-01-01".
+2. Parse OBJECT_MODIFIED_DATE_LIMIT into a timezone-aware local datetime at start-of-day for correct comparison with S3 LastModified.
+3. After head_object succeeds, compare LastModified to the limit:
+   - If earlier: log the required “will be copied…” message, then copy the object to {OBJECT_RELATIVE_PATH}.{BACKUP_EXTENSION} and log success or a relevant error.
+   - Else: log the required “will NOT be copied.” message.
+4. Keep existing logger + tqdm behavior unchanged.
+
+- `upload.py`: Add date-limit settings, parse/compare LastModified, and perform conditional copy_object with required log messages.
