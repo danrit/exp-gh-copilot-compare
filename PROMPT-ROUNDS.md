@@ -182,3 +182,45 @@ Edit `download.py` to add a **progress bar** to the download process. Here are d
 
 - `download.py`: Show a tqdm progress bar in the console (not the log file) that updates after each downloaded file.
 - `pyproject.toml`: Add tqdm dependency for a console progress bar.
+
+## Round 4
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+This is the first step to implement the upload process: iterate over the CSV file and for each row: build the equivalent S3 object key then get the Object attributes (...). If the object does not exist, log an error message. Here are detailed implementation instructions:
+
+Edit `upload.py` to iterate over the CSV file at `CSV_FILE_PATH` and for each row:
+
+- in the CSV file the column to use for the file relative path and name is `publicId`
+- build the S3 object key using the following pattern: `s3://{AWS_S3_BUCKET_NAME}/{OBJECT_RELATIVE_PATH}.{IMAGE_EXTENSION}`
+  - `AWS_S3_BUCKET_NAME` is an environment variable defined in `.env`
+  - `OBJECT_RELATIVE_PATH` is a variable to define by removing the prefix defined in `SKIPPED_PREFIX` from the `publicId` value
+  - `IMAGE_EXTENSION` is defined in `upload.py`
+- Retrieve the S3 Object attributes (or metadata) without downloading the file and output the following attributes with the following format: `Exist: {object_key} ; size={size} ; {last modified date} ; etag={etag} ; {content type} ; {checksum}`
+- if the object does not exist, log an error message with the following format: `Do NOT exist: {object_key} !`
+
+Use the `boto3` library to interact with AWS S3. Authentication is not part of this project, it is assumed that the credentials are already available in a shared credential file (`~/.aws/credentials`) and that `boto3` can access them without any additional configuration.
+
+Usage of the updated `upload.py` should be as follows: `python upload.py` (+ any required parameters if needed)
+
+### Response
+
+1. Add required runtime dependencies (boto3) to pyproject.toml.
+2. Replace the incomplete upload.py skeleton with a working script that:
+    - loads .env and reads AWS_S3_BUCKET_NAME
+    - iterates CSV_FILE_PATH, reads publicId
+    - removes SKIPPED_PREFIX from publicId to form OBJECT_RELATIVE_PATH
+    - builds s3://{bucket}/{OBJECT_RELATIVE_PATH}.{IMAGE_EXTENSION}
+    - calls head_object to fetch metadata (no download)
+    - logs Exist: ... line with size, last modified date, etag, content type, checksum
+    - logs Do NOT exist: ... ! when missing
+
+- `pyproject.toml`: Add boto3 dependency for S3 head_object.
+- `upload.py`: Implement the CSV iteration + S3 object key building + head_object metadata output formats from PROMPT.md.
