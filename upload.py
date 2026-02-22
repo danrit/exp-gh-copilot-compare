@@ -30,8 +30,9 @@ SKIPPED_PREFIX = "editorial/"
 # EXTENSION_JPEG: best guess based on dataset.
 IMAGE_EXTENSION = "jpg"
 
-# BACKUP_EXTENSION: extension used for the copied object.
-BACKUP_EXTENSION = "bak"
+# BACKUP_EXTENSION: all the files are PSD file originally. Prior to
+# replacing the original by a real jpg version, we are doing a backup as PSD.
+BACKUP_EXTENSION = "psd"
 
 # OBJECT_MODIFIED_DATE_LIMIT: objects modified before this date will be copied.
 OBJECT_MODIFIED_DATE_LIMIT = "2026-01-01"

@@ -325,3 +325,34 @@ Now that `upload.py` can iterate over the CSV file and run successfully this sim
 4. Keep existing logger + tqdm behavior unchanged.
 
 - `upload.py`: Add date-limit settings, parse/compare LastModified, and perform conditional copy_object with required log messages.
+
+## Round 7.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+There is an issue with the current implementation: the `BACKUP_EXTENSION` variable used was incorrectly removed from the file `upload.py` during an earlier change in this prompt session (in an attempt of code cleaning?). During the last prompt, the variable became needed and with no specific instruction given, it was set by the agent to an arbitrary value of `bak`.
+
+Edit `upload.py` to change `BACKUP_EXTENSION` variable to its initial value of `psd`. And restore the comment describing it for code clarity, see below.
+
+```python
+# BACKUP_EXTENSION: all the files are PSD file originally. Prior to
+# replacing the original by a real jpg version, we are doing a backup as PSD.
+```
+
+### Response
+
+1. Open PROMPT.md and identify the required change: BACKUP_EXTENSION must be restored to its original value psd, along with a specific explanatory comment.
+2. Update upload.py:
+    - Change BACKUP_EXTENSION from "bak" to "psd".
+    - Restore the two-line comment exactly as provided in PROMPT.md (keeping it adjacent to the setting for clarity).
+3. No dependency changes are needed.
+
+- `upload.py`: Restore BACKUP_EXTENSION to psd and reinstate the original comment explaining why it is used.
