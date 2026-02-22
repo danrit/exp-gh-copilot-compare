@@ -8,7 +8,9 @@ object attributes using S3 HEAD requests (no download).
 from __future__ import annotations
 
 import csv
+import logging
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -26,9 +28,6 @@ SKIPPED_PREFIX = "editorial/"
 
 # EXTENSION_JPEG: best guess based on dataset.
 IMAGE_EXTENSION = "jpg"
-
-# BACKUP_EXTENSION: currently unused by PROMPT.md step; kept for later steps.
-BACKUP_EXTENSION = "psd"
 # end settings
 
 
@@ -57,15 +56,56 @@ def _format_last_modified(value: Any) -> str:
     return str(value)
 
 
-def _get_checksum(head: dict[str, Any]) -> str:
-    """Extract a checksum from S3 head response, if present."""
-    return (
-        head.get("ChecksumSHA256")
-        or head.get("ChecksumSHA1")
-        or head.get("ChecksumCRC32C")
-        or head.get("ChecksumCRC32")
-        or ""
-    )
+def _format_size(num_bytes: int | None) -> str:
+    """Format bytes as a human-readable size (B, KB, MB, GB, TB)."""
+    if num_bytes is None:
+        return "unknown"
+    size = float(num_bytes)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if size < 1024 or unit == "TB":
+            if unit == "B":
+                return f"{int(size)} {unit}"
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{num_bytes} B"
+
+
+class _StartEndOnlyFilter(logging.Filter):
+    """Allow only START/END messages through (intended for console handler)."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return msg.startswith("START ") or msg.startswith("END ")
+
+
+def _configure_logger(log_file_path: Path) -> logging.Logger:
+    """Configure and return a logger that logs details to file and start/end to console."""
+    log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    logger = logging.getLogger("cgm-5625.upload")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    if not logger.handlers:
+        formatter = logging.Formatter(
+            fmt="%(asctime)s %(levelname)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        formatter.converter = time.localtime  # keep log timestamps in local time
+
+        file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(formatter)
+        console_handler.addFilter(_StartEndOnlyFilter())
+
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
+
+    return logger
 
 
 def main() -> int:
@@ -74,6 +114,10 @@ def main() -> int:
 
     bucket_name = _require_env("AWS_S3_BUCKET_NAME").strip()
     s3 = boto3.client("s3")
+
+    timestamp = datetime.now().astimezone().strftime(TIMESTAMP_FORMAT)
+    log_file_path = Path("data") / "logs" / timestamp / "upload.log"
+    logger = _configure_logger(log_file_path)
 
     csv_path = Path(CSV_FILE_PATH)
     if not csv_path.is_file():
@@ -84,35 +128,37 @@ def main() -> int:
         if not reader.fieldnames or "publicId" not in reader.fieldnames:
             raise RuntimeError("CSV must contain a 'publicId' column")
 
+        public_ids: list[str] = []
         for row in reader:
             public_id = (row.get("publicId") or "").strip()
-            if not public_id:
+            if public_id:
+                public_ids.append(public_id)
+
+    total_files = len(public_ids)
+    logger.info(f"START upload of {total_files} files...")
+
+    for public_id in public_ids:
+        object_relative_path = _object_relative_path_from_public_id(public_id)
+        object_key = f"{object_relative_path}.{IMAGE_EXTENSION}"
+        object_uri = f"s3://{bucket_name}/{object_key}"
+
+        try:
+            head = s3.head_object(Bucket=bucket_name, Key=object_key)
+        except ClientError as e:
+            code = (e.response.get("Error") or {}).get("Code")
+            status = (e.response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
+            if code in {"404", "NoSuchKey", "NotFound"} or status == 404:
+                logger.info(f"Do NOT exist: {object_uri} !")
                 continue
+            raise
 
-            object_relative_path = _object_relative_path_from_public_id(public_id)
-            object_key = f"{object_relative_path}.{IMAGE_EXTENSION}"
-            object_uri = f"s3://{bucket_name}/{object_key}"
+        size_human = _format_size(head.get("ContentLength"))
+        last_modified = _format_last_modified(head.get("LastModified"))
+        etag = head.get("ETag")
 
-            try:
-                head = s3.head_object(Bucket=bucket_name, Key=object_key)
-            except ClientError as e:
-                code = (e.response.get("Error") or {}).get("Code")
-                status = (e.response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
-                if code in {"404", "NoSuchKey", "NotFound"} or status == 404:
-                    print(f"Do NOT exist: {object_uri} !")
-                    continue
-                raise
+        logger.info(f"Exist: {object_uri} ; size={size_human} ; {last_modified} ; etag={etag}")
 
-            size = head.get("ContentLength")
-            last_modified = _format_last_modified(head.get("LastModified"))
-            etag = head.get("ETag")
-            content_type = head.get("ContentType")
-            checksum = _get_checksum(head)
-
-            print(
-                f"Exist: {object_uri} ; size={size} ; {last_modified} ; etag={etag} ; {content_type} ; {checksum}"
-            )
-
+    logger.info(f"END upload of {total_files} files!")
     return 0
 
 

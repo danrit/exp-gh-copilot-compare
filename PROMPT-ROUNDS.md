@@ -224,3 +224,42 @@ Usage of the updated `upload.py` should be as follows: `python upload.py` (+ any
 
 - `pyproject.toml`: Add boto3 dependency for S3 head_object.
 - `upload.py`: Implement the CSV iteration + S3 object key building + head_object metadata output formats from PROMPT.md.
+
+## Round 5
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `upload.py` to improve the output:
+
+- Remove `content type` and `checksum` from the output line, as they are actually not useful in the current context.
+- Format the size in a human-readable format (e.g., KB, MB, GB)
+- move logging messages to a logger instead of using print statements. Here are detailed implementation instructions:
+  - name the log file `upload.log` and create a subfolder in `data/logs`, with the same timestamp string as the one used for the downloaded files, to store it.
+  - configure the logger:
+      - set the logging level to `INFO`
+      - set the log format to include the timestamp (format '%Y-%m-%d %H:%M:%S'), log level and message
+      - set the log file path to the one defined above
+  - replace the print statements with appropriate logging calls (e.g., `logging.info()`)
+  - add one "start" logging message (`logging.info()`) at the start of the upload process to log the total number of files to download, with the following format: `START upload of {total_files} files...`
+  - add one "end" logging message (`logging.info()`) at the end of the upload process to log the completion of the download, with the following format: `END upload of {total_files} files!`
+- Output the "start" and "end" logging messages in the console as well, with the same format as the log file, just like in `download.py`. The other logging messages (existence and metadata of each file) should be output only in the log file, not in the console.
+
+### Response
+
+1. Update upload.py to match PROMPT.md:
+    - Replace print(...) with a logger configured like download.py (file logs + console START/END only).
+    - Create data/logs/<timestamp>/upload.log using local-time timestamp.
+    - Remove content type and checksum from the “Exist” line.
+    - Display ContentLength as human-readable size.
+    - Log START/END messages with total file count (collect publicIds first).
+2. Keep dependencies as-is (already includes python-dotenv and boto3; no new libraries needed).
+
+- `upload.py`: Implement the logging behavior, human-readable size formatting, and simplified “Exist” output exactly as requested in PROMPT.md.
