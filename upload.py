@@ -30,6 +30,9 @@ SKIPPED_PREFIX = "editorial/"
 # EXTENSION_JPEG: best guess based on dataset.
 IMAGE_EXTENSION = "jpg"
 
+# DOWNLOADED_FILES_PATH: local run folder created by download.py containing files to upload.
+DOWNLOADED_FILES_PATH = "data/runs/20260223-054344"
+
 # BACKUP_EXTENSION: all the files are PSD file originally. Prior to
 # replacing the original by a real jpg version, we are doing a backup as PSD.
 BACKUP_EXTENSION = "psd"
@@ -194,6 +197,20 @@ def main() -> int:
                 logger.error(f"Failed to copy object {object_key} to {backup_object_key}: {e}")
             else:
                 logger.info(f"Object {object_key} was successfully copied to {backup_object_key}!")
+
+            local_file_path = Path(DOWNLOADED_FILES_PATH) / f"{public_id}.{IMAGE_EXTENSION}"
+            if not local_file_path.is_file():
+                logger.info(f"Local file {local_file_path} does not exist, cannot upload to {object_key}!")
+                continue
+
+            try:
+                s3.upload_file(str(local_file_path), bucket_name, object_key)
+            except ClientError as e:
+                logger.error(f"Failed to upload {local_file_path} to {object_key}: {e}")
+            except OSError as e:
+                logger.error(f"Failed to read local file {local_file_path} for upload to {object_key}: {e}")
+            else:
+                logger.info(f"Object {object_key} was successfully uploaded from {local_file_path}!")
         else:
             logger.info(
                 f"Object {object_key} was modified after {OBJECT_MODIFIED_DATE_LIMIT}, it will NOT be copied."
