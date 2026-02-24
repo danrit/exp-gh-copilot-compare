@@ -1,8 +1,11 @@
 [project]
 name = "cgm-5625"
-version = "0.0.1"
+version = "0.1.0"
 description = "A collection of python scripts to achieve a one-off task of downloading and uploading a list of images"
+requires-python = ">=3.11"
 dependencies = [
+    "requests>=2.32",
+    "python-dotenv>=1.0",
 ]
 
 [build-system]
