@@ -29,17 +29,35 @@ LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 CLOUDINARY_BASE_URL = os.environ['CLOUDINARY_BASE_URL']
 
 
+# Custom log level between INFO (20) and WARNING (30) used for high-level progress
+# messages that should appear on both console and log file.
+NOTICE_LEVEL = 25
+logging.addLevelName(NOTICE_LEVEL, 'NOTICE')
+
+
+def notice(message: str, *args, **kwargs) -> None:
+    """Log a message at the custom NOTICE level."""
+    logging.log(NOTICE_LEVEL, message, *args, **kwargs)
+
+
 def configure_logging(timestamp: str) -> None:
-    """Configure logging to write to both a timestamped log file and the console."""
+    """Configure logging to write to both a timestamped log file and the console.
+
+    The file handler captures all messages (INFO and above).
+    The console handler only shows NOTICE and above, hiding per-file detail messages.
+    """
     log_dir = Path('data/logs') / timestamp
     log_dir.mkdir(parents=True, exist_ok=True)
 
     formatter = logging.Formatter(fmt=LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
 
     file_handler = logging.FileHandler(log_dir / 'download.log', encoding='utf-8')
+    file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
 
     console_handler = logging.StreamHandler()
+    # Only show NOTICE and above on the console to reduce noise
+    console_handler.setLevel(NOTICE_LEVEL)
     console_handler.setFormatter(formatter)
 
     logging.basicConfig(level=logging.INFO, handlers=[file_handler, console_handler])
@@ -65,7 +83,7 @@ def download_images(csv_file_path: str) -> None:
         rows = list(csv.DictReader(csvfile))
 
     total_files = len(rows)
-    logging.info(f"START download of {total_files} files...")
+    notice(f"START download of {total_files} files...")
 
     for row in rows:
         public_id = row['publicId']
@@ -83,7 +101,7 @@ def download_images(csv_file_path: str) -> None:
         dest_path.write_bytes(response.content)
         logging.info(f"Downloaded {public_id} successfully!")
 
-    logging.info(f"END download of {total_files} files!")
+    notice(f"END download of {total_files} files!")
 
 
 if __name__ == '__main__':

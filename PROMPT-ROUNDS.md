@@ -87,3 +87,26 @@ Update `download.py` to move logging messages to a logger instead of using print
 No new dependencies needed — logging is stdlib
 
 - `download.py`: Add logging import, configure_logging() helper, replace print with logging.info(), add START/END messages.
+
+## Round 2.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Update `download.py` to have logging messages (`Downloading [...]` and `Downloaded [...]`) output ONLY in the log file, not in the console. Keep the "start" and "end" logging messages output in both (console and log file). That way, the console will show less, while the log file will contain all the detailed messages about each file being downloaded.
+
+### Response
+
+In configure_logging, set the console handler to only show WARNING and above (effectively hiding INFO detail messages), but keep the file handler at INFO. Then, for the START/END messages, use a level that passes through the console filter — the cleanest stdlib approach is to add a custom level (e.g. NOTICE between INFO and WARNING), but the simpler approach is to just use logging.WARNING for START/END on the console while keeping everything at INFO in the file.
+
+Actually, the cleanest approach without a custom level: keep both handlers at INFO, but set the console handler's level to WARNING and log START/END with logging.warning(). However, that semantically misuses WARNING.
+
+Best approach: add a custom NOTICE log level (e.g. 25, between INFO=20 and WARNING=30). Use it for START/END messages — both handlers will show it. Use logging.info() for per-file messages — only the file handler (at INFO=20) will show them, since the console handler is set to NOTICE=25.
+
+- `download.py`: Add a NOTICE custom log level, set console handler level to NOTICE, keep file handler at INFO, use logging.notice() for START/END and logging.info() for per-file messages.
