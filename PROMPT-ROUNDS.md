@@ -205,3 +205,27 @@ Edit `upload.py` to improve the output:
 3. Update the log line to use the formatted size and drop content_type/checksum
 
 - `upload.py`: Remove head_object call, content_type and checksum fields; add format_size() helper; update log line.
+
+## Round 6
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `upload.py` to add a **progress bar** to the upload process, similar to the one implemented in `download.py`. Here are detailed implementation instructions:
+
+- It should show the number of files uploaded and the total number of files to upload plus a percentage of completion.
+- It should update after each file is uploaded.
+- It should be displayed in the console, not in the log file.
+
+### Response
+
+Add a tqdm progress bar to check_objects() in upload.py, wrapping the row iteration — identical pattern to download.py. No new dependencies needed since tqdm is already in pyproject.toml
+
+- `upload.py`: Import tqdm and wrap the row loop with a progress bar.

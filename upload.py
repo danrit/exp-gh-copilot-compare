@@ -14,6 +14,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -101,28 +102,32 @@ def check_objects(csv_file_path: str) -> None:
     total_files = len(rows)
     notice(f"START checking {total_files} objects in S3 bucket '{AWS_S3_BUCKET_NAME}'...")
 
-    for row in rows:
-        public_id = row['publicId']
-        object_key = build_s3_object_key(public_id)
-        s3_uri = f"s3://{AWS_S3_BUCKET_NAME}/{object_key}"
+    # tqdm writes to stderr by default, keeping the progress bar out of the log file
+    with tqdm(total=total_files, unit='file', desc='Checking') as progress_bar:
+        for row in rows:
+            public_id = row['publicId']
+            object_key = build_s3_object_key(public_id)
+            s3_uri = f"s3://{AWS_S3_BUCKET_NAME}/{object_key}"
 
-        try:
-            response = s3.get_object_attributes(
-                Bucket=AWS_S3_BUCKET_NAME,
-                Key=object_key,
-                ObjectAttributes=['ETag', 'ObjectSize'],
-            )
+            try:
+                response = s3.get_object_attributes(
+                    Bucket=AWS_S3_BUCKET_NAME,
+                    Key=object_key,
+                    ObjectAttributes=['ETag', 'ObjectSize'],
+                )
 
-            size = format_size(response.get('ObjectSize', 0))
-            last_modified = response.get('LastModified', 'N/A')
-            etag = response.get('ETag', 'N/A')
+                size = format_size(response.get('ObjectSize', 0))
+                last_modified = response.get('LastModified', 'N/A')
+                etag = response.get('ETag', 'N/A')
 
-            logging.info(f"Exist: {s3_uri} ; size={size} ; {last_modified} ; etag={etag}")
-        except ClientError as e:
-            if e.response['Error']['Code'] in ('NoSuchKey', '404'):
-                logging.error(f"Do NOT exist: {s3_uri} !")
-            else:
-                raise
+                logging.info(f"Exist: {s3_uri} ; size={size} ; {last_modified} ; etag={etag}")
+            except ClientError as e:
+                if e.response['Error']['Code'] in ('NoSuchKey', '404'):
+                    logging.error(f"Do NOT exist: {s3_uri} !")
+                else:
+                    raise
+            finally:
+                progress_bar.update(1)
 
     notice(f"END checking {total_files} objects in S3 bucket '{AWS_S3_BUCKET_NAME}'!")
 
