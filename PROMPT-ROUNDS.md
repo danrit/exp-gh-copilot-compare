@@ -138,3 +138,45 @@ Edit `download.py` to add a **progress bar** to the download process. Here are d
 
 - `download.py`: Import tqdm and wrap the download loop with a progress bar.
 - `pyproject.toml`: Add tqdm to dependencies.
+
+## Round 4
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+This is the first step to implement the upload process: iterate over the CSV file and for each row: build the equivalent S3 object key then get the Object attributes (...). If the object does not exist, log an error message. Here are detailed implementation instructions:
+
+Edit `upload.py` to iterate over the CSV file at `CSV_FILE_PATH` and for each row:
+
+- in the CSV file the column to use for the file relative path and name is `publicId`
+- build the S3 object key using the following pattern: `s3://{AWS_S3_BUCKET_NAME}/{OBJECT_RELATIVE_PATH}.{IMAGE_EXTENSION}`
+  - `AWS_S3_BUCKET_NAME` is an environment variable defined in `.env`
+  - `OBJECT_RELATIVE_PATH` is a variable to define by removing the prefix defined in `SKIPPED_PREFIX` from the `publicId` value
+  - `IMAGE_EXTENSION` is defined in `upload.py`
+- Retrieve the S3 Object attributes (or metadata) without downloading the file and output the following attributes with the following format: `Exist: {object_key} ; size={size} ; {last modified date} ; etag={etag} ; {content type} ; {checksum}`
+- if the object does not exist, log an error message with the following format: `Do NOT exist: {object_key} !`
+
+Use the `boto3` library to interact with AWS S3. Authentication is not part of this project, it is assumed that the credentials are already available in a shared credential file (`~/.aws/credentials`) and that `boto3` can access them without any additional configuration.
+
+Usage of the updated `upload.py` should be as follows: `python upload.py` (+ any required parameters if needed)
+
+### Response
+
+1. upload.py:
+    - Add imports: csv, logging, os, boto3, dotenv
+    - Load .env and read AWS_S3_BUCKET_NAME
+    - Add configure_logging() (reusing same pattern as download.py)
+    - Add build_s3_object_key() helper to strip SKIPPED_PREFIX and build the key
+    - Add check_objects() function iterating over CSV rows, calling s3.get_object_attributes() to retrieve metadata without downloading, logging existence or error
+2. pyproject.toml: Add boto3 dependency.
+3. .env: Document the new AWS_S3_BUCKET_NAME variable.
+
+- `pyproject.toml`: Add boto3 dependency.
+- `upload.py`: Add imports, env loading, logging setup, S3 key builder, and check_objects() main function.
+- `.env`: Add AWS_S3_BUCKET_NAME alongside the existing variable.
