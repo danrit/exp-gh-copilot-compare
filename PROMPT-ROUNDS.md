@@ -110,3 +110,31 @@ Actually, the cleanest approach without a custom level: keep both handlers at IN
 Best approach: add a custom NOTICE log level (e.g. 25, between INFO=20 and WARNING=30). Use it for START/END messages — both handlers will show it. Use logging.info() for per-file messages — only the file handler (at INFO=20) will show them, since the console handler is set to NOTICE=25.
 
 - `download.py`: Add a NOTICE custom log level, set console handler level to NOTICE, keep file handler at INFO, use logging.notice() for START/END and logging.info() for per-file messages.
+
+## Round 3
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Edit `download.py` to add a **progress bar** to the download process. Here are detailed implementation instructions:
+- consider using an existing Python library for implementation.
+- It should show the number of files downloaded and the total number of files to download plus a percentage of completion.
+- It should update after each file is downloaded.
+- It should be displayed in the console, not in the log file.
+
+### Response
+
+1. pyproject.toml: Add tqdm as a dependency — it's the most popular and well-maintained Python progress bar library.
+2. download.py:
+    - Import tqdm
+    - Wrap the row iteration with a tqdm progress bar showing file count and percentage
+    - Ensure tqdm writes to sys.stderr (console only, not captured by the logging file handler)
+
+- `download.py`: Import tqdm and wrap the download loop with a progress bar.
+- `pyproject.toml`: Add tqdm to dependencies.

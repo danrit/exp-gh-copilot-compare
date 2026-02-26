@@ -14,6 +14,7 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -85,21 +86,24 @@ def download_images(csv_file_path: str) -> None:
     total_files = len(rows)
     notice(f"START download of {total_files} files...")
 
-    for row in rows:
-        public_id = row['publicId']
-        url = build_download_url(public_id)
-        dest_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
+    # tqdm writes to stderr by default, keeping the progress bar out of the log file
+    with tqdm(total=total_files, unit='file', desc='Downloading') as progress_bar:
+        for row in rows:
+            public_id = row['publicId']
+            url = build_download_url(public_id)
+            dest_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
 
-        logging.info(f"Downloading {public_id}...")
+            logging.info(f"Downloading {public_id}...")
 
-        # Preserve subdirectory structure from the publicId path
-        dest_path.parent.mkdir(parents=True, exist_ok=True)
+            # Preserve subdirectory structure from the publicId path
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
 
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
 
-        dest_path.write_bytes(response.content)
-        logging.info(f"Downloaded {public_id} successfully!")
+            dest_path.write_bytes(response.content)
+            logging.info(f"Downloaded {public_id} successfully!")
+            progress_bar.update(1)
 
     notice(f"END download of {total_files} files!")
 
