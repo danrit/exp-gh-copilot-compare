@@ -229,3 +229,37 @@ Edit `upload.py` to add a **progress bar** to the upload process, similar to the
 Add a tqdm progress bar to check_objects() in upload.py, wrapping the row iteration — identical pattern to download.py. No new dependencies needed since tqdm is already in pyproject.toml
 
 - `upload.py`: Import tqdm and wrap the row loop with a progress bar.
+
+## Round 7
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Now that `upload.py` can iterate over the CSV file and run successfully this simple object check using `boto3` library to interact with AWS S3, the next step is to create a copy of the existing object to a new object key with a different extension. Here are detailed implementation instructions:
+
+- define a new variable `OBJECT_MODIFIED_DATE_LIMIT` in `upload.py` with a date value '2026-01-01'
+- For each row in the CSV file, after successfully checking the existence of the object and retrieving its attributes and IF the `LastModified` attribute is earlier than the `OBJECT_MODIFIED_DATE_LIMIT`:
+  - log a message with the following format: `Object {object_key} was modified before {OBJECT_MODIFIED_DATE_LIMIT}, it will be copied to a new object key with the backup extension.`
+  - create a copy of the object to a new S3 object with the key defined using the following pattern: `s3://{AWS_S3_BUCKET_NAME}/{OBJECT_RELATIVE_PATH}.{BACKUP_EXTENSION}`
+    - `AWS_S3_BUCKET_NAME` is an environment variable defined in `.env`
+    - `OBJECT_RELATIVE_PATH` is a variable to define by removing the prefix defined in `SKIPPED_PREFIX` from the `publicId` value
+    - `BACKUP_EXTENSION` is defined in `upload.py`
+  - log a message when the copy is successful with the following format: `Object {object_key} was successfully copied to {backup_object_key}!`
+  - if the copy operation fails, log a relevant error message.
+- If the `LastModified` attribute is later than or equal to the `OBJECT_MODIFIED_DATE_LIMIT`, log a message with the following format: `Object {object_key} was modified after {OBJECT_MODIFIED_DATE_LIMIT}, it will NOT be copied.`
+
+### Response
+
+1. Add date to the datetime import
+2. Add OBJECT_MODIFIED_DATE_LIMIT constant
+3. Add build_s3_backup_key() helper
+4. Inside check_objects(), after logging the existing object's attributes, compare LastModified against OBJECT_MODIFIED_DATE_LIMIT and either copy or skip, with appropriate logging
+
+- `upload.py`: Add OBJECT_MODIFIED_DATE_LIMIT, build_s3_backup_key(), and copy-or-skip logic after the existence check.

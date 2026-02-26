@@ -8,7 +8,7 @@ whether each object already exists in the bucket by retrieving its attributes.
 import csv
 import logging
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 import boto3
@@ -34,6 +34,10 @@ IMAGE_EXTENSION = 'jpg'
 BACKUP_EXTENSION = 'psd'
 
 AWS_S3_BUCKET_NAME = os.environ['AWS_S3_BUCKET_NAME']
+
+# OBJECT_MODIFIED_DATE_LIMIT: objects with LastModified earlier than this date will be
+# copied to a backup key before being replaced with the jpg version.
+OBJECT_MODIFIED_DATE_LIMIT = date.fromisoformat('2026-01-01')
 
 # Custom log level between INFO (20) and WARNING (30) for high-level progress messages.
 NOTICE_LEVEL = 25
@@ -74,6 +78,15 @@ def build_s3_object_key(public_id: str) -> str:
     """
     relative_path = public_id.removeprefix(SKIPPED_PREFIX)
     return f"{relative_path}.{IMAGE_EXTENSION}"
+
+
+def build_s3_backup_key(public_id: str) -> str:
+    """Build the S3 backup object key from a Cloudinary publicId.
+
+    Strips the SKIPPED_PREFIX from the publicId and appends the BACKUP_EXTENSION.
+    """
+    relative_path = public_id.removeprefix(SKIPPED_PREFIX)
+    return f"{relative_path}.{BACKUP_EXTENSION}"
 
 
 def format_size(size_bytes: int) -> str:
@@ -121,6 +134,29 @@ def check_objects(csv_file_path: str) -> None:
                 etag = response.get('ETag', 'N/A')
 
                 logging.info(f"Exist: {s3_uri} ; size={size} ; {last_modified} ; etag={etag}")
+
+                if last_modified != 'N/A' and last_modified.date() < OBJECT_MODIFIED_DATE_LIMIT:
+                    logging.info(
+                        f"Object {object_key} was modified before {OBJECT_MODIFIED_DATE_LIMIT}, "
+                        f"it will be copied to a new object key with the backup extension."
+                    )
+                    backup_key = build_s3_backup_key(public_id)
+                    backup_s3_uri = f"s3://{AWS_S3_BUCKET_NAME}/{backup_key}"
+                    try:
+                        s3.copy_object(
+                            Bucket=AWS_S3_BUCKET_NAME,
+                            CopySource={'Bucket': AWS_S3_BUCKET_NAME, 'Key': object_key},
+                            Key=backup_key,
+                        )
+                        logging.info(f"Object {object_key} was successfully copied to {backup_s3_uri}!")
+                    except ClientError as copy_error:
+                        logging.error(f"Failed to copy {s3_uri} to {backup_s3_uri}: {copy_error}")
+                else:
+                    logging.info(
+                        f"Object {object_key} was modified after {OBJECT_MODIFIED_DATE_LIMIT}, "
+                        f"it will NOT be copied."
+                    )
+
             except ClientError as e:
                 if e.response['Error']['Code'] in ('NoSuchKey', '404'):
                     logging.error(f"Do NOT exist: {s3_uri} !")
