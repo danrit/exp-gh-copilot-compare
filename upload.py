@@ -75,6 +75,15 @@ def build_s3_object_key(public_id: str) -> str:
     return f"{relative_path}.{IMAGE_EXTENSION}"
 
 
+def format_size(size_bytes: int) -> str:
+    """Format a byte count into a human-readable string (e.g. KB, MB, GB)."""
+    for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} PB"
+
+
 def check_objects(csv_file_path: str) -> None:
     """Iterate over the CSV file and check whether each image exists in S3.
 
@@ -101,21 +110,14 @@ def check_objects(csv_file_path: str) -> None:
             response = s3.get_object_attributes(
                 Bucket=AWS_S3_BUCKET_NAME,
                 Key=object_key,
-                ObjectAttributes=['ETag', 'Checksum', 'ObjectSize'],
+                ObjectAttributes=['ETag', 'ObjectSize'],
             )
-            # Retrieve head separately for ContentType and LastModified
-            head = s3.head_object(Bucket=AWS_S3_BUCKET_NAME, Key=object_key)
 
-            size = response.get('ObjectSize', 'N/A')
-            last_modified = response.get('LastModified', head.get('LastModified', 'N/A'))
+            size = format_size(response.get('ObjectSize', 0))
+            last_modified = response.get('LastModified', 'N/A')
             etag = response.get('ETag', 'N/A')
-            content_type = head.get('ContentType', 'N/A')
-            checksum = response.get('Checksum', 'N/A')
 
-            logging.info(
-                f"Exist: {s3_uri} ; size={size} ; {last_modified} ; "
-                f"etag={etag} ; {content_type} ; {checksum}"
-            )
+            logging.info(f"Exist: {s3_uri} ; size={size} ; {last_modified} ; etag={etag}")
         except ClientError as e:
             if e.response['Error']['Code'] in ('NoSuchKey', '404'):
                 logging.error(f"Do NOT exist: {s3_uri} !")

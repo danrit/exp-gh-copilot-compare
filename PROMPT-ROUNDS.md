@@ -180,3 +180,28 @@ Usage of the updated `upload.py` should be as follows: `python upload.py` (+ any
 - `pyproject.toml`: Add boto3 dependency.
 - `upload.py`: Add imports, env loading, logging setup, S3 key builder, and check_objects() main function.
 - `.env`: Add AWS_S3_BUCKET_NAME alongside the existing variable.
+
+## Round 5
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `upload.py` to improve the output:
+
+- Remove `content type` and `checksum` from the output line, as they are actually not useful in the current context.
+- Format the size in a human-readable format (e.g., KB, MB, GB)
+
+### Response
+
+1. Remove content_type and checksum variables and the head_object call (no longer needed)
+2. Add a format_size() helper using stdlib only to convert bytes to human-readable format (KB, MB, GB)
+3. Update the log line to use the formatted size and drop content_type/checksum
+
+- `upload.py`: Remove head_object call, content_type and checksum fields; add format_size() helper; update log line.
