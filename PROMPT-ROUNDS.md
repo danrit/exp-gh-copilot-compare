@@ -263,3 +263,27 @@ Now that `upload.py` can iterate over the CSV file and run successfully this sim
 4. Inside check_objects(), after logging the existing object's attributes, compare LastModified against OBJECT_MODIFIED_DATE_LIMIT and either copy or skip, with appropriate logging
 
 - `upload.py`: Add OBJECT_MODIFIED_DATE_LIMIT, build_s3_backup_key(), and copy-or-skip logic after the existence check.
+
+## Round 8
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `download.py` to remove one subfolder (`editorial`), part of the `publicID` created for each image downloaded (similarly to what is done in `upload.py`). Here are detailed implementation instructions:
+
+- define a new variable `SKIPPED_PREFIX` with the value `editorial/`
+- update `local_path` to remove the `SKIPPED_PREFIX` from the `publicId` value when building the local path to save the downloaded file.
+
+### Response
+
+1. Add SKIPPED_PREFIX = 'editorial/' constant to download.py
+2. Update dest_path to strip SKIPPED_PREFIX from public_id when building the local file path (while keeping the full public_id for the download URL)
+
+- `download.py`: Add SKIPPED_PREFIX constant and strip it from public_id when building dest_path.

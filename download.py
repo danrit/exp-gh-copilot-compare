@@ -29,6 +29,9 @@ LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 CLOUDINARY_BASE_URL = os.environ['CLOUDINARY_BASE_URL']
 
+# SKIPPED_PREFIX: path prefix in publicId (from Cloudinary) not included in the local file path.
+SKIPPED_PREFIX = 'editorial/'
+
 
 # Custom log level between INFO (20) and WARNING (30) used for high-level progress
 # messages that should appear on both console and log file.
@@ -91,11 +94,12 @@ def download_images(csv_file_path: str) -> None:
         for row in rows:
             public_id = row['publicId']
             url = build_download_url(public_id)
-            dest_path = run_dir / f"{public_id}.{IMAGE_EXTENSION}"
+            local_path = public_id.removeprefix(SKIPPED_PREFIX)
+            dest_path = run_dir / f"{local_path}.{IMAGE_EXTENSION}"
 
             logging.info(f"Downloading {public_id}...")
 
-            # Preserve subdirectory structure from the publicId path
+            # Preserve subdirectory structure from the local_path
             dest_path.parent.mkdir(parents=True, exist_ok=True)
 
             response = requests.get(url, timeout=30)
