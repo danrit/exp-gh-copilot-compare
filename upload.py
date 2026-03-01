@@ -166,6 +166,7 @@ def check_objects(csv_file_path: str) -> None:
                                 Filename=str(local_file_path),
                                 Bucket=AWS_S3_BUCKET_NAME,
                                 Key=object_key,
+                                ExtraArgs={'ContentType': 'image/jpeg'},
                             )
                             logging.info(f"Object {object_key} was successfully uploaded from {local_file_path}!")
                         except ClientError as upload_error:

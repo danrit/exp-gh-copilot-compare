@@ -316,3 +316,23 @@ Finally update `upload.py` to add actual upload of the file (downloaded by `down
 4. If it exists, call s3.upload_file() to upload it to the original object_key, logging success or error
 
 - `upload.py`: Add DOWNLOADED_FILES_PATH constant and upload logic after the backup copy.
+
+## Round 9.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+There is an issue with the current implementation: the uploaded file seems to be saved in S3 with metadata `Content-Type: binary/octet-stream` instead of the expected `Content-Type: image/jpeg`. Fix the issue in `upload.py`.
+
+### Response
+
+Add ExtraArgs={'ContentType': 'image/jpeg'} to the s3.upload_file() call — this is the standard boto3 way to set the Content-Type metadata on upload
+
+- `upload.py`: Pass ExtraArgs with ContentType to s3.upload_file().
