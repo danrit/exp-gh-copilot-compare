@@ -35,6 +35,9 @@ BACKUP_EXTENSION = 'psd'
 
 AWS_S3_BUCKET_NAME = os.environ['AWS_S3_BUCKET_NAME']
 
+# DOWNLOADED_FILES_PATH: path to the local directory containing the downloaded files.
+DOWNLOADED_FILES_PATH = Path('data/runs/20260302-060031')
+
 # OBJECT_MODIFIED_DATE_LIMIT: objects with LastModified earlier than this date will be
 # copied to a backup key before being replaced with the jpg version.
 OBJECT_MODIFIED_DATE_LIMIT = date.fromisoformat('2026-01-01')
@@ -151,6 +154,23 @@ def check_objects(csv_file_path: str) -> None:
                         logging.info(f"Object {object_key} was successfully copied to {backup_s3_uri}!")
                     except ClientError as copy_error:
                         logging.error(f"Failed to copy {s3_uri} to {backup_s3_uri}: {copy_error}")
+
+                    local_path = public_id.removeprefix(SKIPPED_PREFIX)
+                    local_file_path = DOWNLOADED_FILES_PATH / f"{local_path}.{IMAGE_EXTENSION}"
+
+                    if not local_file_path.exists():
+                        logging.error(f"Local file {local_file_path} does not exist, cannot upload to {object_key}!")
+                    else:
+                        try:
+                            s3.upload_file(
+                                Filename=str(local_file_path),
+                                Bucket=AWS_S3_BUCKET_NAME,
+                                Key=object_key,
+                            )
+                            logging.info(f"Object {object_key} was successfully uploaded from {local_file_path}!")
+                        except ClientError as upload_error:
+                            logging.error(f"Failed to upload {local_file_path} to {s3_uri}: {upload_error}")
+
                 else:
                     logging.info(
                         f"Object {object_key} was modified after {OBJECT_MODIFIED_DATE_LIMIT}, "
