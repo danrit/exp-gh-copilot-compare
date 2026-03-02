@@ -3,6 +3,7 @@ Download the list of jpeg transformed images from Cloudinary and save them local
 """
 
 import csv
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,21 +33,42 @@ def main():
     output_dir = Path('data/runs') / timestamp
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    log_dir = Path('data/logs') / timestamp
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / 'download.log'
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        filename=str(log_file),
+    )
+
     with open(CSV_FILE_PATH, newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            public_id = row['publicId']
-            url = f"{cloudinary_base_url}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
-            dest_path = output_dir / f"{public_id}.{IMAGE_EXTENSION}"
+        rows = list(csv.DictReader(csvfile))
 
-            print(f"Downloading {public_id}...")
-            dest_path.parent.mkdir(parents=True, exist_ok=True)
+    total_files = len(rows)
+    start_msg = f"START download of {total_files} files..."
+    logging.info(start_msg)
+    print(start_msg)
 
-            response = requests.get(url, timeout=60)
-            response.raise_for_status()
+    for row in rows:
+        public_id = row['publicId']
+        url = f"{cloudinary_base_url}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
+        dest_path = output_dir / f"{public_id}.{IMAGE_EXTENSION}"
 
-            dest_path.write_bytes(response.content)
-            print(f"Downloaded {public_id} successfully!")
+        logging.info("Downloading %s...", public_id)
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+
+        dest_path.write_bytes(response.content)
+        logging.info("Downloaded %s successfully!", public_id)
+
+    end_msg = f"END download of {total_files} files!"
+    logging.info(end_msg)
+    print(end_msg)
 
 
 if __name__ == '__main__':

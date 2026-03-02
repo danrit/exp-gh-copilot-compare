@@ -51,3 +51,39 @@ Step-by-step solution
 
 - `download.py`: Rewrite the script to read the CSV, build URLs, download images into a timestamped folder, and log progress.
 - `pyproject.toml`: Add requests and python-dotenv as dependencies.
+
+## Round 2
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Update `download.py` to move logging messages to a logger instead of using print statements. Here are detailed implementation instructions:
+- name the log file `download.log` and create a subfolder in `data/logs`, with the same timestamp string as the one used for the downloaded files, to store it.
+- import the `logging` module and configure it:
+    - set the logging level to `INFO`
+    - set the log format to include the timestamp (format '%Y-%m-%d %H:%M:%S'), log level and message
+    - set the log file path to the one defined above
+- replace the print statements for logging the download progress and success messages with appropriate logging calls (e.g., `logging.info()`)
+- add one "start" logging message (`logging.info()`) at the start of the download process to log the total number of files to download, with the following format: `START download of {total_files} files...`
+- add one "end" logging message (`logging.info()`) at the end of the download process to log the completion of the download, with the following format: `END download of {total_files} files!`
+- Output the "start" and "end" logging messages in the console as well, with the same format as the log file.
+
+### Response
+
+Step-by-step solution
+
+1. Import logging from the standard library.
+2. Count total rows in the CSV upfront so we can log the total before starting downloads.
+3. Create a data/logs/{timestamp}/ directory and configure logging.basicConfig to write to download.log inside it, with the specified format and INFO level.
+4. Replace print() calls with logging.info().
+5. Add START/END messages that go to both the log file and the console. To achieve "console as well" for only those two messages, add a temporary StreamHandler or simply also print() them alongside the logging call. The cleanest approach: use print() for just those two plus logging.info().
+
+No new dependencies are needed — logging is part of the standard library, so pyproject.toml stays unchanged
+
+- `download.py`: Replace print with logging, add log file configuration, add START/END messages printed to both console and log file.
