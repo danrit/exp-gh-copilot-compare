@@ -10,6 +10,7 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 # settings:
 DEFAULT_TRANSFORMATION_PREFIX = 'image/upload/t_hires2/v1'
@@ -48,11 +49,9 @@ def main():
         rows = list(csv.DictReader(csvfile))
 
     total_files = len(rows)
-    start_msg = f"START download of {total_files} files..."
-    logging.info(start_msg)
-    print(start_msg)
+    logging.info("START download of %d files...", total_files)
 
-    for row in rows:
+    for row in tqdm(rows, desc="Downloading", unit="file"):
         public_id = row['publicId']
         url = f"{cloudinary_base_url}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
         dest_path = output_dir / f"{public_id}.{IMAGE_EXTENSION}"
@@ -66,9 +65,7 @@ def main():
         dest_path.write_bytes(response.content)
         logging.info("Downloaded %s successfully!", public_id)
 
-    end_msg = f"END download of {total_files} files!"
-    logging.info(end_msg)
-    print(end_msg)
+    logging.info("END download of %d files!", total_files)
 
 
 if __name__ == '__main__':

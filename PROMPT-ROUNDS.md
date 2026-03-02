@@ -111,3 +111,32 @@ Step-by-step solution
 The fix is a one-line change: replace datetime.now(timezone.utc) with datetime.now()
 
 - `download.py`: Change the timestamp from UTC to local time so it matches the log message timestamps.
+
+## Round 3
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+Edit `download.py` to add a **progress bar** to the download process. Here are detailed implementation instructions:
+- consider using an existing Python library for implementation.
+- It should show the number of files downloaded and the total number of files to download plus a percentage of completion.
+- It should update after each file is downloaded.
+- It should be displayed in the console, not in the log file.
+
+### Response
+
+Step-by-step solution
+
+1. Add tqdm — the most popular and well-maintained Python library for progress bars. It shows count, total, and percentage out of the box.
+2. Wrap the download loop with tqdm, setting the total and a description.
+3. Remove the print() calls for START/END since tqdm will handle console progress display (keep the logging.info calls for the log file).
+4. Add tqdm to pyproject.toml dependencies.
+
+- `download.py`: Wrap the download loop with tqdm for a console progress bar; keep log-only messages for START/END.
+- `pyproject.toml`: Add tqdm as a dependency.
