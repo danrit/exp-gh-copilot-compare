@@ -87,3 +87,27 @@ Step-by-step solution
 No new dependencies are needed — logging is part of the standard library, so pyproject.toml stays unchanged
 
 - `download.py`: Replace print with logging, add log file configuration, add START/END messages printed to both console and log file.
+
+## Round 2.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+
+### Prompt
+
+There is an issue with the current implementation: it is confusing how the timestamp string used for folders is based on UTC time, while the timestamps in the log messages are based on local time. Update the implementation to use the same timezone for both, ideally local time.
+
+### Response
+
+Step-by-step solution
+
+1. Change the timestamp for folder names from datetime.now(timezone.utc) to datetime.now() (local time).
+2. Add datefmt and a logging.Formatter with converter set to time.localtime — but actually, logging already uses local time by default, so the log timestamps are already local. The only mismatch is the folder timestamp using UTC. Simply switching the folder timestamp to local time fixes the inconsistency.
+
+The fix is a one-line change: replace datetime.now(timezone.utc) with datetime.now()
+
+- `download.py`: Change the timestamp from UTC to local time so it matches the log message timestamps.

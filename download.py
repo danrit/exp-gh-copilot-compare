@@ -5,7 +5,7 @@ Download the list of jpeg transformed images from Cloudinary and save them local
 import csv
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -29,7 +29,7 @@ def main():
     load_dotenv()
     cloudinary_base_url = os.environ['CLOUDINARY_BASE_URL']
 
-    timestamp = datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT)
+    timestamp = datetime.now().strftime(TIMESTAMP_FORMAT)
     output_dir = Path('data/runs') / timestamp
     output_dir.mkdir(parents=True, exist_ok=True)
 
