@@ -184,3 +184,29 @@ Step-by-step solution
 
 - `upload.py`: Implement CSV iteration, S3 object key construction, and metadata retrieval using boto3.
 - `pyproject.toml`: Add boto3 as a dependency.
+
+## Round 5
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `upload.py` to improve the output:
+
+- Remove `content type` and `checksum` from the output line, as they are actually not useful in the current context.
+- Format the size in a human-readable format (e.g., KB, MB, GB)
+
+### Response
+
+Step-by-step solution
+1. Add a helper function format_size to convert bytes into a human-readable string (KB, MB, GB).
+2. Remove content_type and checksum from the logging output.
+3. Replace the raw size in the log line with the formatted human-readable size.
+
+- `upload.py`: Remove content_type/checksum, add format_size helper, use it in the log line.

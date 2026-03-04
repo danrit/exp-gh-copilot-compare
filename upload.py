@@ -30,6 +30,15 @@ IMAGE_EXTENSION = 'jpg' #
 BACKUP_EXTENSION = 'psd'
 
 
+def format_size(size_bytes):
+    """Format a byte count into a human-readable string (e.g., KB, MB, GB)."""
+    for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
+        if abs(size_bytes) < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} PB"
+
+
 def main():
     """Iterate over the CSV, build S3 keys, and check if each object exists."""
     load_dotenv()
@@ -71,12 +80,10 @@ def main():
             size = response['ContentLength']
             last_modified = response['LastModified']
             etag = response['ETag']
-            content_type = response.get('ContentType', '')
-            checksum = response.get('ChecksumSHA256', response.get('ChecksumSHA1', ''))
 
             logging.info(
-                "Exist: s3://%s/%s ; size=%s ; %s ; etag=%s ; %s ; %s",
-                bucket_name, object_key, size, last_modified, etag, content_type, checksum,
+                "Exist: s3://%s/%s ; size=%s ; %s ; etag=%s",
+                bucket_name, object_key, format_size(size), last_modified, etag,
             )
         except ClientError as e:
             if e.response['Error']['Code'] == '404':
