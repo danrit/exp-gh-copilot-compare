@@ -31,6 +31,8 @@ BACKUP_EXTENSION = 'psd'
 
 OBJECT_MODIFIED_DATE_LIMIT = '2026-01-01'
 
+DOWNLOADED_FILES_PATH = 'data/runs/20260305-061749'
+
 
 def format_size(size_bytes):
     """Format a byte count into a human-readable string (e.g., KB, MB, GB)."""
@@ -112,6 +114,31 @@ def main():
                         "Failed to copy %s to %s: %s",
                         object_key, backup_object_key, copy_error,
                     )
+
+                # Upload the downloaded file to replace the original object
+                local_file_path = Path(DOWNLOADED_FILES_PATH) / f"{object_relative_path}.{IMAGE_EXTENSION}"
+                if not local_file_path.exists():
+                    logging.error(
+                        "Local file %s does not exist, cannot upload to %s!",
+                        local_file_path, object_key,
+                    )
+                else:
+                    try:
+                        s3_client.upload_file(
+                            str(local_file_path),
+                            bucket_name,
+                            object_key,
+                        )
+                        logging.info(
+                            "Object %s was successfully uploaded from %s!",
+                            object_key, local_file_path,
+                        )
+                    except ClientError as upload_error:
+                        logging.error(
+                            "Failed to upload %s to %s: %s",
+                            local_file_path, object_key, upload_error,
+                        )
+
             else:
                 logging.info(
                     "Object %s was modified after %s, it will NOT be copied.",
