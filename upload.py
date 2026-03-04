@@ -5,7 +5,7 @@ Upload the list of files to the AWS S3 bucket.
 import csv
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import boto3
@@ -28,6 +28,8 @@ IMAGE_EXTENSION = 'jpg' #
 # BACKUP_EXTENSION: all the files are PSD file originally. Prior to
 # replacing the original by a real jpg version, we are doing a backup as PSD.
 BACKUP_EXTENSION = 'psd'
+
+OBJECT_MODIFIED_DATE_LIMIT = '2026-01-01'
 
 
 def format_size(size_bytes):
@@ -85,6 +87,37 @@ def main():
                 "Exist: s3://%s/%s ; size=%s ; %s ; etag=%s",
                 bucket_name, object_key, format_size(size), last_modified, etag,
             )
+
+            date_limit = datetime.strptime(OBJECT_MODIFIED_DATE_LIMIT, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+
+            if last_modified < date_limit:
+                logging.info(
+                    "Object %s was modified before %s, it will be copied to a new object key with the backup extension.",
+                    object_key, OBJECT_MODIFIED_DATE_LIMIT,
+                )
+
+                backup_object_key = f"{object_relative_path}.{BACKUP_EXTENSION}"
+                try:
+                    s3_client.copy_object(
+                        Bucket=bucket_name,
+                        CopySource={'Bucket': bucket_name, 'Key': object_key},
+                        Key=backup_object_key,
+                    )
+                    logging.info(
+                        "Object %s was successfully copied to %s!",
+                        object_key, backup_object_key,
+                    )
+                except ClientError as copy_error:
+                    logging.error(
+                        "Failed to copy %s to %s: %s",
+                        object_key, backup_object_key, copy_error,
+                    )
+            else:
+                logging.info(
+                    "Object %s was modified after %s, it will NOT be copied.",
+                    object_key, OBJECT_MODIFIED_DATE_LIMIT,
+                )
+
         except ClientError as e:
             if e.response['Error']['Code'] == '404':
                 logging.error(
