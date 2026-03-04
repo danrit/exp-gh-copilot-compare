@@ -128,6 +128,7 @@ def main():
                             str(local_file_path),
                             bucket_name,
                             object_key,
+                            ExtraArgs={'ContentType': 'image/jpeg'},
                         )
                         logging.info(
                             "Object %s was successfully uploaded from %s!",

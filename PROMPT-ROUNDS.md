@@ -329,3 +329,26 @@ Step-by-step solution
 4. If it exists, upload it using s3_client.upload_file; log success or error.
 
 - `upload.py`: Add DOWNLOADED_FILES_PATH and the upload logic after the backup copy.
+
+## Round 9.1
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+There is an issue with the current implementation: the uploaded file seems to be saved in S3 with metadata `Content-Type: binary/octet-stream` instead of the expected `Content-Type: image/jpeg`. Fix the issue in `upload.py`.
+
+### Response
+
+Step-by-step solution
+
+1. The s3_client.upload_file method defaults to Content-Type: binary/octet-stream when no explicit content type is provided.
+2. Fix this by passing ExtraArgs with ContentType: image/jpeg to the upload_file call.
+
+- `upload.py`: Add ExtraArgs with the correct ContentType to the upload_file call.
