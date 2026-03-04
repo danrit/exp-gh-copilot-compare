@@ -272,3 +272,29 @@ Step-by-step solution
 4. If on or after the limit: log that it will NOT be copied.
 
 - `upload.py`: Add OBJECT_MODIFIED_DATE_LIMIT, parse it as a timezone-aware datetime, and add the copy logic after the existence check.
+
+## Round 8
+
+### Context
+
+- file `.github/copilot-instructions.md`
+- file `data/export.lite.csv`
+- file `download.py`
+- file `pyproject.toml`
+- file `upload.py`
+
+### Prompt
+
+Edit `download.py` to remove one subfolder (`editorial`), part of the `publicID` created for each image downloaded (similarly to what is done in `upload.py`). Here are detailed implementation instructions:
+
+- define a new variable `SKIPPED_PREFIX` with the value `editorial/`
+- update `local_path` to remove the `SKIPPED_PREFIX` from the `publicId` value when building the local path to save the downloaded file.
+
+### Response
+
+Step-by-step solution
+
+1. Add SKIPPED_PREFIX = 'editorial/' setting in download.py.
+2. Strip the prefix from publicId when building the local destination path, similar to how upload.py does it.
+
+- `download.py`: Add SKIPPED_PREFIX and strip it from the local path.

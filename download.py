@@ -24,6 +24,9 @@ CSV_FILE_PATH = 'data/export.lite.csv'
 
 TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
 
+# SKIPPED_PREFIX path prefix in publicId file (from cloudinary) not needed locally.
+SKIPPED_PREFIX = 'editorial/'
+
 
 def main():
     """Read the CSV file, download each image from Cloudinary, and save it locally."""
@@ -54,7 +57,14 @@ def main():
     for row in tqdm(rows, desc="Downloading", unit="file"):
         public_id = row['publicId']
         url = f"{cloudinary_base_url}/{DEFAULT_TRANSFORMATION_PREFIX}/{public_id}.{IMAGE_EXTENSION}"
-        dest_path = output_dir / f"{public_id}.{IMAGE_EXTENSION}"
+
+        # Remove the cloudinary-specific prefix to get the local relative path
+        if public_id.startswith(SKIPPED_PREFIX):
+            local_relative_path = public_id[len(SKIPPED_PREFIX):]
+        else:
+            local_relative_path = public_id
+
+        dest_path = output_dir / f"{local_relative_path}.{IMAGE_EXTENSION}"
 
         logging.info("Downloading %s...", public_id)
         dest_path.parent.mkdir(parents=True, exist_ok=True)
