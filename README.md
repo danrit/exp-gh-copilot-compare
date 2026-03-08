@@ -18,16 +18,11 @@ List of models reviewed:
 - **Claude Sonnet 4.6** (1.0x)
 - **Claude Opus 4.6** (3.0x)
 
-Extra:
-
-- **Gemini 3 Flash** (0.33x)
-- **Claude Haiku 4.5** (0.33x)
-- **Gemini 3 Pro** (1x)
-
 ## Experiment process
 
 - Using edit mode in copilot chat.
 - I have split the works into multiple steps, that I have progressively defined, and prompted the model for each one.
+- The AI coding assistant is NOT used in agentic loop. only one LLM call is made at each round.
 - Accepting all the edit suggestions (no manual changes), and create a git commit for each round.
 - a round is defined as a prompt, code generation, commit.
 - validate by testing and prompt again, ie do another round, if needed until the correct result is achieved for that step.
