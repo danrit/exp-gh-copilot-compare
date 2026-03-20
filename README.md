@@ -17,18 +17,18 @@ List of models reviewed:
     - [PROMPT-ROUNDS.md](./../gpt-5-mini/PROMPT-ROUNDS.md)
     - [download.py](./../gpt-5-mini/download.py)
     - [upload.py](./../gpt-5-mini/upload.py)
-- **GPT-5.2** (1x) -> branch: `gpt-5.2` github links:
-    - [PROMPT-ROUNDS.md](./../gpt-5.2/PROMPT-ROUNDS.md)
-    - [download.py](./../gpt-5.2/download.py)
-    - [upload.py](./../gpt-5.2/upload.py)
-- **Claude Sonnet 4.6** (1.0x) -> branch: `claude-sonnet-4.6` github links:
-    - [PROMPT-ROUNDS.md](./../claude-sonnet-4.6/PROMPT-ROUNDS.md)
-    - [download.py](./../claude-sonnet-4.6/download.py)
-    - [upload.py](./../claude-sonnet-4.6/upload.py)
-- **Claude Opus 4.6** (3.0x) -> branch: `claude-opus-4.6` github links:
-    - [PROMPT-ROUNDS.md](./../claude-opus-4.6/PROMPT-ROUNDS.md)
-    - [download.py](./../claude-opus-4.6/download.py)
-    - [upload.py](./../claude-opus-4.6/upload.py)
+- **gpt-5-2** (1x) -> branch: [`gpt-5-2`](../../tree/gpt-5-2):
+    - [PROMPT-ROUNDS.md](./../gpt-5-2/PROMPT-ROUNDS.md)
+    - [download.py](./../gpt-5-2/download.py)
+    - [upload.py](./../gpt-5-2/upload.py)
+- **Claude Sonnet 4.6** (1.0x) -> branch: [`claude-sonnet-4-6`](../../tree/claude-sonnet-4-6):
+    - [PROMPT-ROUNDS.md](./../claude-sonnet-4-6/PROMPT-ROUNDS.md)
+    - [download.py](./../claude-sonnet-4-6/download.py)
+    - [upload.py](./../claude-sonnet-4-6/upload.py)
+- **Claude Opus 4.6** (3.0x) -> branch: [`claude-opus-4-6`](../../tree/claude-opus-4-6):
+    - [PROMPT-ROUNDS.md](./../claude-opus-4-6/PROMPT-ROUNDS.md)
+    - [download.py](./../claude-opus-4-6/download.py)
+    - [upload.py](./../claude-opus-4-6/upload.py)
 
 ## Experiment process
 
