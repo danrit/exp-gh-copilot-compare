@@ -30,6 +30,16 @@ List of models reviewed:
     - [download.py](./../claude-opus-4-6/download.py)
     - [upload.py](./../claude-opus-4-6/upload.py)
 
+## Branch to branch comparison
+
+|                   | gpt-5-mini | gpt-5-2 | claude-sonnet-4-6                                        | claude-opus-4-6                                          |
+|-------------------|------------|---------|----------------------------------------------------------|----------------------------------------------------------|
+| gpt-5-mini        |            |         |                                                          |                                                          |
+| gpt-5-2           |            |         |                                                          |                                                          |
+| claude-sonnet-4-6 |            |         |                                                          | [diff](../../compare/claude-sonnet-4-6..claude-opus-4-6) |
+| claude-opus-4-6   |            |         | [diff](../../compare/claude-opus-4-6..claude-sonnet-4-6) |                                                          |
+
+
 ## Experiment process
 
 - Using edit mode in copilot chat.
