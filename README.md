@@ -13,7 +13,10 @@ Practically this repo is a collection of two python scripts to achieve a one-off
 
 List of models reviewed:
 
-- **GPT-5 mini** (0x)
+- **GPT-5 mini** (0x) -> branch: `gpt-5-mini` github links:
+    - [PROMPT-ROUNDS.md](./blob/gpt-5-mini/PROMPT-ROUNDS.md)
+    - [download.py](./blob/gpt-5-mini/download.py)
+    - [upload.py](./blob/gpt-5-mini/upload.py)
 - **GPT-5.2** (1x)
 - **Claude Sonnet 4.6** (1.0x)
 - **Claude Opus 4.6** (3.0x)
