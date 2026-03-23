@@ -34,10 +34,10 @@ List of models reviewed:
 
 |                   | gpt-5-mini                                | gpt-5-2                                   | claude-sonnet-4-6                                        | claude-opus-4-6                                          |
 |-------------------|-------------------------------------------|-------------------------------------------|----------------------------------------------------------|----------------------------------------------------------|
-| gpt-5-mini        |                                           | [diff](../../compare/gpt-5-mini..gpt-5-2) |                                                          |                                                          |
-| gpt-5-2           | [diff](../../compare/gpt-5-2..gpt-5-mini) |                                           |                                                          |                                                          |
-| claude-sonnet-4-6 |                                           |                                           |                                                          | [diff](../../compare/claude-sonnet-4-6..claude-opus-4-6) |
-| claude-opus-4-6   |                                           |                                           | [diff](../../compare/claude-opus-4-6..claude-sonnet-4-6) |                                                          |
+| gpt-5-mini        | -                                         | [diff](../../compare/gpt-5-mini..gpt-5-2) |                                                          |                                                          |
+| gpt-5-2           | [diff](../../compare/gpt-5-2..gpt-5-mini) | -                                         |                                                          |                                                          |
+| claude-sonnet-4-6 |                                           |                                           | -                                                        | [diff](../../compare/claude-sonnet-4-6..claude-opus-4-6) |
+| claude-opus-4-6   |                                           |                                           | [diff](../../compare/claude-opus-4-6..claude-sonnet-4-6) | -                                                        |
 
 
 ## Experiment process
